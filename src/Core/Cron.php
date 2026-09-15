@@ -1,6 +1,6 @@
 <?php
 
-namespace SwiftSearch\Core;
+namespace SwiftSearchAlgolia\Core;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -35,7 +35,7 @@ class Cron
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$wpdb->prefix}swift_search_logs WHERE updated_at < %s AND frequency < %d",
+                "DELETE FROM {$wpdb->prefix}swift_search_algolia_logs WHERE updated_at < %s AND frequency < %d",
                 gmdate('Y-m-d H:i:s', strtotime('-30 days')),
                 5
             )

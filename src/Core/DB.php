@@ -1,6 +1,6 @@
 <?php
 
-namespace SwiftSearch\Core;
+namespace SwiftSearchAlgolia\Core;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -21,7 +21,7 @@ class DB
     public static function get_table_name()
     {
         global $wpdb;
-        return $wpdb->prefix . 'swift_search_logs';
+        return $wpdb->prefix . 'swift_search_algolia_logs';
     }
 
     /**
@@ -49,7 +49,7 @@ class DB
         dbDelta($sql);
 
         // Create Batch Logs Table
-        $batch_table_name = $wpdb->prefix . 'swift_search_batch_logs';
+        $batch_table_name = $wpdb->prefix . 'swift_search_algolia_batch_logs';
         $sql_batch = "CREATE TABLE $batch_table_name (
             id bigint(20) NOT NULL AUTO_INCREMENT,
             batch_offset bigint(20) NOT NULL,
@@ -65,8 +65,8 @@ class DB
         dbDelta($sql_batch);
 
         // Initialize Options
-        add_option('swift_search_sync_errors', array());
-        add_option('swift_search_index_status', array());
-        update_option('swift_search_db_version', SWIFT_SEARCH_DB_VERSION);
+        add_option('swift_search_algolia_sync_errors', array());
+        add_option('swift_search_algolia_index_status', array());
+        update_option('swift_search_algolia_db_version', SWIFT_SEARCH_ALGOLIA_DB_VERSION);
     }
 }

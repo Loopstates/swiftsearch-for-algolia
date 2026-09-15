@@ -1,13 +1,13 @@
 <?php
 
-namespace SwiftSearch\Core;
+namespace SwiftSearchAlgolia\Core;
 
-use SwiftSearch\Admin\AdminController;
-use SwiftSearch\Core\SettingsIntegrity;
-use SwiftSearch\Frontend\SearchController;
-use SwiftSearch\Engine\EngineController;
-use SwiftSearch\Integrations\IntegrationManager;
-use SwiftSearch\Core\Cron;
+use SwiftSearchAlgolia\Admin\AdminController;
+use SwiftSearchAlgolia\Core\SettingsIntegrity;
+use SwiftSearchAlgolia\Frontend\SearchController;
+use SwiftSearchAlgolia\Engine\EngineController;
+use SwiftSearchAlgolia\Integrations\IntegrationManager;
+use SwiftSearchAlgolia\Core\Cron;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -60,8 +60,8 @@ class Plugin
         add_action('plugins_loaded', array($this, 'load_textdomain'));
 
         // Security & Integrity
-        add_action('updated_option', array('\SwiftSearch\Core\SettingsIntegrity', 'sign_option'), 10, 3);
-        add_action('added_option', array('\SwiftSearch\Core\SettingsIntegrity', 'sign_option'), 10, 2);
+        add_action('updated_option', array('\SwiftSearchAlgolia\Core\SettingsIntegrity', 'sign_option'), 10, 3);
+        add_action('added_option', array('\SwiftSearchAlgolia\Core\SettingsIntegrity', 'sign_option'), 10, 2);
         add_action('admin_init', array($this, 'verify_integrity'));
     }
 
@@ -76,7 +76,7 @@ class Plugin
         }
 
         // API
-        new \SwiftSearch\Api\RestController();
+        new \SwiftSearchAlgolia\Api\RestController();
 
         // Core Engine (Indexing, Sync, etc.)
         new EngineController();
@@ -90,14 +90,14 @@ class Plugin
         new IntegrationManager();
 
         // Background Processor (Async Chain)
-        new \SwiftSearch\Engine\BackgroundProcess();
+        new \SwiftSearchAlgolia\Engine\BackgroundProcess();
 
         // Scheduled Tasks
         (new Cron())->init();
 
         // WP-CLI Registration
         if (defined('WP_CLI') && WP_CLI) {
-            \WP_CLI::add_command('swift-search', '\SwiftSearch\CLI\IndexCommand');
+            \WP_CLI::add_command('swift-search-algolia', '\SwiftSearchAlgolia\CLI\IndexCommand');
         }
     }
 
@@ -114,10 +114,10 @@ class Plugin
      */
     public function verify_integrity()
     {
-        if (!SettingsIntegrity::verify_option('swift_search_settings')) {
+        if (!SettingsIntegrity::verify_option('swift_search_algolia_settings')) {
             // Tampering Detected!
             add_action('admin_notices', function () {
-                echo '<div class="notice notice-error"><p><strong>Security Warning:</strong> SwiftSearch settings appear to have been tampered. Security check failed. Please reconnect to Typesense to restore functionality.</p></div>';
+                echo '<div class="notice notice-error"><p><strong>' . esc_html__('Security Warning:', 'swiftsearch-for-algolia') . '</strong> ' . esc_html__('SwiftSearch settings appear to have been modified externally. Please verify your Algolia credentials.', 'swiftsearch-for-algolia') . '</p></div>';
             });
         }
     }

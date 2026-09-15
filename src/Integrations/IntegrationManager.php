@@ -1,6 +1,6 @@
 <?php
 
-namespace SwiftSearch\Integrations;
+namespace SwiftSearchAlgolia\Integrations;
 
 if (!defined('ABSPATH')) {
     exit;

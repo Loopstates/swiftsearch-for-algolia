@@ -1,95 +1,82 @@
 <?php
 
-namespace SwiftSearch\Core;
+namespace SwiftSearchAlgolia\Core;
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-use SwiftSearch\Client\Client;
+use SwiftSearchAlgolia\Client\Client;
 
 /**
  * Class Gatekeeper
  * 
- * Central Authority for Validation and Security.
- * "None shall pass without the Gatekeeper's approval."
+ * Central Authority for Validation and Connection Security.
  */
 class Gatekeeper
 {
-    private static $can_use_pro_cache = null;
-
     /**
-     * Check if Typesense is properly connected.
+     * Check if Algolia is properly connected.
      * 
-     * @param bool $ping_health If true, performs a live HTTP check (expensive).
+     * @param bool $ping_health If true, performs a live HTTP check.
      * @return bool
      */
     public static function is_connected($ping_health = false)
     {
-        $settings = get_option('swift_search_settings');
+        $settings = get_option('swift_search_algolia_settings', array());
+
+        $app_id    = $settings['app_id'] ?? ($settings['application_id'] ?? '');
+        $admin_key = $settings['admin_api_key'] ?? ($settings['api_key'] ?? '');
 
         // 1. Structural Check
-        if (empty($settings['api_key']) || empty($settings['host'])) {
+        if (empty($app_id) || empty($admin_key)) {
             return false;
         }
 
-        // 2. Health Check (Optional, Cached)
+        // 2. Live Health Check (Cached)
         if ($ping_health) {
-            $transient = get_transient('swift_search_health_status');
+            $transient = get_transient('swift_search_algolia_health_status');
             if ($transient !== false) {
                 return $transient === 'ok';
             }
 
-            // Live Check
             $client = new Client($settings);
             if ($client->test_connection()) {
-                set_transient('swift_search_health_status', 'ok', 5 * MINUTE_IN_SECONDS);
+                set_transient('swift_search_algolia_health_status', 'ok', 5 * MINUTE_IN_SECONDS);
                 return true;
             } else {
-                set_transient('swift_search_health_status', 'fail', 1 * MINUTE_IN_SECONDS);
+                set_transient('swift_search_algolia_health_status', 'fail', 1 * MINUTE_IN_SECONDS);
                 return false;
             }
         }
 
-        // Default: Assume connected if config exists (fast check for UI rendering)
         return true;
     }
 
     /**
      * Check if we are allowed to Index content.
      * 
-     * @param string $post_type Optional post type to check limits against.
+     * @param string|null $post_type Optional post type.
      * @return bool
      */
     public static function can_index($post_type = null)
     {
-        // 1. Must be Connected
-        if (!self::is_connected()) {
-            return false;
-        }
-
-        // 2. Indexing Guardrails (e.g. Licensing / Limits)
-        // Future: Check if User has exceeded Free Tier Limit (e.g. 1000 posts)
-        // $plan = self::get_plan();
-        // if ($plan->is_free && self::get_total_posts() > 1000) return false;
-
-        return true;
+        return self::is_connected();
     }
 
     /**
-     * Check if Pro features are active.
+     * Check if features are available (All core features are 100% free).
      * 
      * @param string $feature e.g. 'analytics', 'synonyms', 'pinning'
      * @return bool
      */
-    public static function can_use_features($feature = 'pro')
+    public static function can_use_features($feature = 'core')
     {
         return true;
     }
 
-
     /**
-     * Check if User is Admin (Capability Check).
+     * Check if User is Admin.
      * 
      * @return bool
      */

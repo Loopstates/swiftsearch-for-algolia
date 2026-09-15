@@ -12,22 +12,22 @@ global $wpdb;
 
 // 1. Delete Tables
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}swift_search_logs");
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}swift_search_algolia_logs");
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}swift_search_batch_logs");
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}swift_search_algolia_batch_logs");
 
 // 2. Delete Options
-delete_option('swift_search_settings');
-delete_option('swift_search_index_status');
-delete_option('swift_search_sync_errors');
-delete_option('swift_search_db_version');
-delete_option('swift_search_debug_injected_v2');
-delete_option('swift_search_pinned_items');
-delete_option('swift_search_override_default');
-delete_option('swift_search_schema_hash');
-delete_option('swift_search_schema_mismatch');
-delete_option('swift_search_debug_loopback');
-delete_option('swift_search_bg_secret');
+delete_option('swift_search_algolia_settings');
+delete_option('swift_search_algolia_index_status');
+delete_option('swift_search_algolia_sync_errors');
+delete_option('swift_search_algolia_db_version');
+delete_option('swift_search_algolia_debug_injected_v2');
+delete_option('swift_search_algolia_pinned_items');
+delete_option('swift_search_algolia_override_default');
+delete_option('swift_search_algolia_schema_hash');
+delete_option('swift_search_algolia_schema_mismatch');
+delete_option('swift_search_algolia_debug_loopback');
+delete_option('swift_search_algolia_bg_secret');
 
 // 3. Clear Async Actions
 if (class_exists('ActionScheduler_QueueRunner')) {

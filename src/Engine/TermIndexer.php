@@ -1,5 +1,5 @@
 <?php
-namespace SwiftSearch\Engine;
+namespace SwiftSearchAlgolia\Engine;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
 /**
  * Class TermIndexer
  *
- * Handles building documents for WP_Term objects (Categories, Tags).
+ * Handles building Algolia documents for WP_Term objects (Categories, Tags).
  */
 class TermIndexer
 {
@@ -19,12 +19,12 @@ class TermIndexer
         if ($config_loader) {
             $this->config = $config_loader->get_config();
         } else {
-            $this->config = get_option('swift_search_settings', array());
+            $this->config = get_option('swift_search_algolia_settings', array());
         }
     }
 
     /**
-     * Build a term document.
+     * Build a term document for Algolia.
      *
      * @param int|object $term Term ID or object.
      * @return array|false Document or false if invalid.
@@ -39,8 +39,9 @@ class TermIndexer
             return false;
         }
 
-        // Strict Check: specific taxonomies only
-        $allowed_taxonomies = isset($this->config['indexed_taxonomies']) ? $this->config['indexed_taxonomies'] : array('category', 'post_tag', 'product_cat');
+        $allowed_taxonomies = isset($this->config['indexed_taxonomies'])
+            ? $this->config['indexed_taxonomies']
+            : array('category', 'post_tag', 'product_cat');
 
         if (!in_array($term->taxonomy, $allowed_taxonomies)) {
             return false;
@@ -51,16 +52,15 @@ class TermIndexer
             $url = '';
         }
 
-        $document = array(
-            'id' => (string) $term->term_id, // Typesense ID must be string
-            'term_id' => (int) $term->term_id,
-            'name' => $term->name,
-            'slug' => $term->slug,
+        return array(
+            'objectID' => 'term_' . $term->term_id,
+            'id'       => (string) $term->term_id,
+            'term_id'  => (int) $term->term_id,
+            'name'     => $term->name,
+            'slug'     => $term->slug,
             'taxonomy' => $term->taxonomy,
-            'count' => (int) $term->count,
-            'url' => (string) $url,
+            'count'    => (int) $term->count,
+            'url'      => (string) $url,
         );
-
-        return $document;
     }
 }

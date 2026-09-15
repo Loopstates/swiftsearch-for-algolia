@@ -1,5 +1,5 @@
 <?php
-namespace SwiftSearch\Engine;
+namespace SwiftSearchAlgolia\Engine;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -14,8 +14,8 @@ if (!defined('ABSPATH')) {
 class BackgroundIndexer
 {
     const BATCH_SIZE = 50;
-    const ACTION_HOOK = 'swift_search_process_batch';
-    const STATUS_OPTION = 'swift_search_index_status';
+    const ACTION_HOOK = 'swift_search_algolia_process_batch';
+    const STATUS_OPTION = 'swift_search_algolia_index_status';
 
     public function __construct()
     {

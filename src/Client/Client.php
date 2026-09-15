@@ -1,6 +1,6 @@
 <?php
 
-namespace SwiftSearch\Client;
+namespace SwiftSearchAlgolia\Client;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -9,55 +9,106 @@ if (!defined('ABSPATH')) {
 /**
  * Class Client
  *
- * Lightweight Typesense Client using wp_remote_request.
- * Avoids Guzzle dependency issues.
+ * Lightweight Algolia REST API Client using wp_remote_request.
+ * Avoids heavy Composer or Guzzle dependency conflicts.
  */
 class Client
 {
+    /**
+     * Algolia Application ID.
+     *
+     * @var string
+     */
+    protected $app_id;
 
-    protected $host;
-    protected $port;
-    protected $protocol;
-    protected $api_key;
-    protected $search_key;
+    /**
+     * Algolia Admin API Key (server-side operations only).
+     *
+     * @var string
+     */
+    protected $admin_api_key;
+
+    /**
+     * Algolia Search-Only API Key (frontend queries).
+     *
+     * @var string
+     */
+    protected $search_api_key;
+
+    /**
+     * Index prefix (e.g. "wp_").
+     *
+     * @var string
+     */
+    protected $index_prefix = '';
+
+    /**
+     * Last recorded error message.
+     *
+     * @var string
+     */
     protected $last_error = '';
 
     /**
      * Constructor.
      *
-     * @param array $config Configuration array.
+     * @param array|null $config Configuration array.
      */
     public function __construct($config = null)
     {
         if (!$config) {
-            $config = get_option('swift_search_settings', array());
+            $config = get_option('swift_search_algolia_settings', array());
         }
 
-        $this->host = $config['host'] ?? '';
-        $this->port = $config['port'] ?? '443';
-        $this->protocol = $config['protocol'] ?? 'https';
-        $this->api_key = $config['api_key'] ?? '';
-        $this->search_key = $config['search_key'] ?? '';
+        $this->app_id         = trim($config['app_id'] ?? ($config['application_id'] ?? ''));
+        $this->admin_api_key  = trim($config['admin_api_key'] ?? ($config['api_key'] ?? ''));
+        $this->search_api_key = trim($config['search_api_key'] ?? ($config['search_key'] ?? ''));
+        $this->index_prefix   = trim($config['index_prefix'] ?? '');
     }
 
     /**
-     * Get Base URL.
+     * Get read base URL (uses Distributed Search Network).
      *
      * @return string
      */
-    protected function get_base_url()
+    protected function get_read_base_url()
     {
-        // Omit port if standard for better proxy compatibility
-        $port = (int) $this->port;
-        if (($this->protocol === 'https' && $port === 443) || ($this->protocol === 'http' && $port === 80)) {
-            return "{$this->protocol}://{$this->host}";
+        if (empty($this->app_id)) {
+            return '';
         }
-        return "{$this->protocol}://{$this->host}:{$this->port}";
+        return 'https://' . strtolower($this->app_id) . '-dsn.algolia.net';
+    }
+
+    /**
+     * Get write base URL.
+     *
+     * @return string
+     */
+    protected function get_write_base_url()
+    {
+        if (empty($this->app_id)) {
+            return '';
+        }
+        return 'https://' . strtolower($this->app_id) . '.algolia.net';
+    }
+
+    /**
+     * Format full index name with optional prefix.
+     *
+     * @param string $index
+     * @return string
+     */
+    public function format_index_name($index)
+    {
+        if (!empty($this->index_prefix) && strpos($index, $this->index_prefix) !== 0) {
+            return $this->index_prefix . $index;
+        }
+        return $index;
     }
 
     /**
      * Get Last Error.
-     * 
+     *
      * @return string
      */
     public function get_last_error()
@@ -66,218 +117,305 @@ class Client
     }
 
     /**
-     * Make a request to Typesense.
+     * Make an HTTP request to the Algolia REST API.
      *
-     * @param string $endpoint Endpoint path.
-     * @param string $method   HTTP Method.
-     * @param array  $body     Request body.
-     * @return array|bool Response body or false on failure.
+     * @param string $endpoint Endpoint path (e.g. "/1/indexes").
+     * @param string $method   HTTP Method ('GET', 'POST', 'PUT', 'DELETE').
+     * @param array  $body     Request body data.
+     * @param bool   $is_write Whether this is a write operation.
+     * @return array|bool Decoded JSON response or false on failure.
      */
-    public function request($endpoint, $method = 'GET', $body = array())
+    public function request($endpoint, $method = 'GET', $body = array(), $is_write = false)
     {
-        $this->last_error = ''; // Reset error
-        $url = $this->get_base_url() . $endpoint;
+        $this->last_error = '';
+
+        if (empty($this->app_id) || empty($this->admin_api_key)) {
+            $this->last_error = __('Algolia Application ID and Admin API Key are required.', 'swiftsearch-for-algolia');
+            return false;
+        }
+
+        $base_url = $is_write ? $this->get_write_base_url() : $this->get_read_base_url();
+        $url      = $base_url . $endpoint;
 
         $args = array(
-            'method' => $method,
+            'method'  => $method,
             'headers' => array(
-                'X-TYPESENSE-API-KEY' => $this->api_key,
-                'Content-Type' => 'application/json',
+                'X-Algolia-Application-Id' => $this->app_id,
+                'X-Algolia-API-Key'        => $this->admin_api_key,
+                'Content-Type'             => 'application/json',
+                'User-Agent'               => 'SwiftSearch-for-Algolia/1.0.0; WordPress/' . get_bloginfo('version'),
             ),
-            'timeout' => 10,
+            'timeout' => 15,
         );
 
         if (!empty($body)) {
-            $args['body'] = json_encode($body);
+            $args['body'] = wp_json_encode($body);
         }
 
         $response = wp_remote_request($url, $args);
+
+        // Fallback for write operations if primary host fails
+        if (is_wp_error($response) && $is_write) {
+            $fallback_url = 'https://' . strtolower($this->app_id) . '-1.algolianet.com' . $endpoint;
+            $response     = wp_remote_request($fallback_url, $args);
+        }
 
         if (is_wp_error($response)) {
             $this->last_error = $response->get_error_message();
             return false;
         }
 
-        $code = wp_remote_retrieve_response_code($response);
+        $code          = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        $json          = json_decode($response_body, true);
+
         if ($code < 200 || $code >= 300) {
-            $body = wp_remote_retrieve_body($response);
             $msg = "HTTP $code";
-            $json = json_decode($body, true);
-            if ($json && isset($json['message'])) {
+            if (is_array($json) && isset($json['message'])) {
                 $msg .= ': ' . $json['message'];
+            } elseif (!empty($response_body)) {
+                $msg .= ': ' . substr(strip_tags($response_body), 0, 200);
             }
             $this->last_error = $msg;
             return false;
         }
 
-        return json_decode(wp_remote_retrieve_body($response), true);
+        return is_array($json) ? $json : array();
     }
 
     /**
-     * Test connection.
+     * Test connection to Algolia.
      *
      * @return bool
      */
     public function test_connection()
     {
-        // Health check endpoint
-        $health = $this->request('/health', 'GET');
-
-        if ($health === false) {
+        $response = $this->request('/1/indexes', 'GET');
+        if ($response === false) {
             return false;
         }
-
-        if (isset($health['ok']) && $health['ok']) {
-            return true;
-        }
-
-        $this->last_error = 'Health check failed. Response: ' . json_encode($health);
-        return false;
+        return isset($response['items']) || is_array($response);
     }
 
     /**
-     * Get stats (Collection info).
-     * 
+     * List all indices and their metadata.
+     *
+     * @return array|bool
+     */
+    public function list_indices()
+    {
+        $response = $this->request('/1/indexes', 'GET');
+        if ($response === false) {
+            return false;
+        }
+        return $response['items'] ?? array();
+    }
+
+    /**
+     * Get aggregate statistics across indices.
+     *
      * @return array
      */
     public function get_stats()
     {
-        // Just counting documents in all collections for a basic stat
-        $collections = $this->request('/collections', 'GET');
-        if (!is_array($collections)) {
-            return array('num_documents' => 0);
+        $indices = $this->list_indices();
+        if (!is_array($indices)) {
+            return array('num_documents' => 0, 'indices' => array());
         }
 
-        $count = 0;
-        foreach ($collections as $col) {
-            $count += $col['num_documents'] ?? 0;
+        $count   = 0;
+        $details = array();
+        foreach ($indices as $item) {
+            $entries = (int) ($item['entries'] ?? 0);
+            $count  += $entries;
+            $details[$item['name']] = array(
+                'entries'    => $entries,
+                'data_size'  => $item['dataSize'] ?? 0,
+                'updated_at' => $item['updatedAt'] ?? '',
+            );
         }
 
-        return array('num_documents' => $count);
-    }
-
-    /**
-     * Upsert an override rule.
-     * 
-     * @param string $id Rule ID.
-     * @param array $rule Rule definition.
-     * @return array|bool
-     */
-    public function upsert_override($id, $rule)
-    {
-        return $this->request('/collections/posts/overrides/' . $id, 'PUT', $rule);
-    }
-
-    /**
-     * Upsert a global synonym set (Typesense v0.30+).
-     * 
-     * @param string $id Synonym ID.
-     * @param array $schema Synonym definition.
-     * @return array|bool
-     */
-    public function upsert_synonym($id, $params, $collections = array('posts'))
-    {
-        /**
-         * v0.30.0+ uses /synonym_sets (underscore) and REQUIRES an "items" array.
-         * EACH item inside that array also REQUIRES its own internal "id".
-         * To "link" these global rules to collections, we use the "collections" array.
-         */
-        $item = $params;
-        if (!isset($item['id'])) {
-            $item['id'] = $id . '-item';
-        }
-
-        $payload = array(
-            'items' => array($item),
-            'collections' => $collections
+        return array(
+            'num_documents' => $count,
+            'indices'       => $details,
         );
-        return $this->request("/synonym_sets/{$id}", 'PUT', $payload);
     }
 
     /**
-     * Import documents (Bulk).
-     * Uses the /import endpoint with JSONL.
-     * 
-     * @param string $collection Collection name.
-     * @param array  $documents  Array of document arrays.
-     * @param string $action     'create', 'upsert', 'update'.
+     * Set index settings.
+     *
+     * @param string $index    Index name.
+     * @param array  $settings Settings payload.
+     * @param bool   $forward_to_replicas Whether to propagate settings to replicas.
      * @return array|bool
      */
-    public function import($collection, $documents, $action = 'upsert')
+    public function set_settings($index, $settings, $forward_to_replicas = false)
+    {
+        $index_name = $this->format_index_name($index);
+        $endpoint   = '/1/indexes/' . rawurlencode($index_name) . '/settings';
+        if ($forward_to_replicas) {
+            $endpoint .= '?forwardToReplicas=true';
+        }
+
+        return $this->request($endpoint, 'PUT', $settings, true);
+    }
+
+    /**
+     * Get index settings.
+     *
+     * @param string $index Index name.
+     * @return array|bool
+     */
+    public function get_settings($index)
+    {
+        $index_name = $this->format_index_name($index);
+        return $this->request('/1/indexes/' . rawurlencode($index_name) . '/settings', 'GET');
+    }
+
+    /**
+     * Save a batch of objects into an Algolia index.
+     *
+     * @param string $index     Index name.
+     * @param array  $documents Array of associative arrays (each MUST have 'objectID').
+     * @param string $action    'addObject' or 'updateObject' (partial update).
+     * @return array|bool
+     */
+    public function save_objects($index, $documents, $action = 'addObject')
     {
         if (empty($documents)) {
             return array('success' => true, 'num_items' => 0);
         }
 
-        // Convert to JSONL
-        $jsonl = '';
+        $index_name = $this->format_index_name($index);
+        $requests   = array();
+
         foreach ($documents as $doc) {
-            $jsonl .= json_encode($doc) . "\n";
+            if (!isset($doc['objectID'])) {
+                continue;
+            }
+            $requests[] = array(
+                'action' => $action,
+                'body'   => $doc,
+            );
         }
 
-        $endpoint = "/collections/{$collection}/documents/import?action={$action}";
+        if (empty($requests)) {
+            return array('success' => true, 'num_items' => 0);
+        }
 
-        $this->last_error = '';
-        $url = $this->get_base_url() . $endpoint;
+        $endpoint = '/1/indexes/' . rawurlencode($index_name) . '/batch';
+        $response = $this->request($endpoint, 'POST', array('requests' => $requests), true);
 
-        $args = array(
-            'method' => 'POST',
-            'headers' => array(
-                'X-TYPESENSE-API-KEY' => $this->api_key,
-                'Content-Type' => 'text/plain', // Important for JSONL? Or app/json works? Typesense docs say text/plain usually best for raw body
-            ),
-            'body' => $jsonl,
-            'timeout' => 30, // Higher timeout for bulk
-        );
-
-        $response = wp_remote_request($url, $args);
-
-        if (is_wp_error($response)) {
-            $this->last_error = $response->get_error_message();
+        if ($response === false) {
             return false;
         }
 
-        $code = wp_remote_retrieve_response_code($response);
-        $body = wp_remote_retrieve_body($response);
+        return array(
+            'success'   => true,
+            'taskID'    => $response['taskID'] ?? 0,
+            'num_items' => count($requests),
+        );
+    }
 
-        if ($code < 200 || $code >= 300) {
-            $this->last_error = "HTTP $code: " . $body;
+    /**
+     * Delete objects from an index by their objectIDs.
+     *
+     * @param string $index      Index name.
+     * @param array  $object_ids Array of string objectIDs.
+     * @return array|bool
+     */
+    public function delete_objects($index, $object_ids)
+    {
+        if (empty($object_ids)) {
+            return array('success' => true, 'num_items' => 0);
+        }
+
+        $index_name = $this->format_index_name($index);
+        $requests   = array();
+
+        foreach ((array) $object_ids as $id) {
+            $requests[] = array(
+                'action' => 'deleteObject',
+                'body'   => array('objectID' => (string) $id),
+            );
+        }
+
+        $endpoint = '/1/indexes/' . rawurlencode($index_name) . '/batch';
+        $response = $this->request($endpoint, 'POST', array('requests' => $requests), true);
+
+        if ($response === false) {
             return false;
         }
 
-        // Response is also JSONL (one result per line)
-        // We can parse it to check for individual errors if we want strict mode
-        // For now, assume success if 200 OK.
-        return array('success' => true, 'raw_response' => $body);
-    }
-
-    /**
-     * Patch a collection (Update schema/config).
-     * 
-     * @param string $name Collection name.
-     * @param array $data Delta to apply.
-     * @return array|bool
-     */
-    public function patch_collection($name, $data)
-    {
-        return $this->request("/collections/{$name}", 'PATCH', $data);
-    }
-
-    /**
-     * Link a global synonym set to a collection (Typesense v0.30+).
-     * 
-     * @param string $collection Collection name.
-     * @param string $id         Synonym Set ID.
-     * @return array|bool
-     */
-    public function link_synonym_to_collection($collection, $id)
-    {
-        // NO LONGER RECOMMENDED for v0.30+ Global Rules; use patch_collection(['synonym_sets' => [...]]) instead.
-        // Keeping for legacy but we will migrate RestController to patch_collection.
-        $payload = array(
-            'id' => $id,
-            'synonym_set_id' => $id
+        return array(
+            'success'   => true,
+            'taskID'    => $response['taskID'] ?? 0,
+            'num_items' => count($requests),
         );
-        return $this->request("/collections/{$collection}/synonyms/{$id}", 'PUT', $payload);
+    }
+
+    /**
+     * Clear all objects from an index.
+     *
+     * @param string $index Index name.
+     * @return array|bool
+     */
+    public function clear_objects($index)
+    {
+        $index_name = $this->format_index_name($index);
+        return $this->request('/1/indexes/' . rawurlencode($index_name) . '/clear', 'POST', array(), true);
+    }
+
+    /**
+     * Delete an entire index.
+     *
+     * @param string $index Index name.
+     * @return array|bool
+     */
+    public function delete_index($index)
+    {
+        $index_name = $this->format_index_name($index);
+        return $this->request('/1/indexes/' . rawurlencode($index_name), 'DELETE', array(), true);
+    }
+
+    /**
+     * Save synonyms to an index.
+     *
+     * @param string $index    Index name.
+     * @param array  $synonyms Array of synonym objects according to Algolia format.
+     * @param bool   $forward_to_replicas
+     * @param bool   $replace_existing
+     * @return array|bool
+     */
+    public function save_synonyms($index, $synonyms, $forward_to_replicas = true, $replace_existing = true)
+    {
+        $index_name = $this->format_index_name($index);
+        $endpoint   = '/1/indexes/' . rawurlencode($index_name) . '/synonyms/batch';
+
+        $query_params = array();
+        if ($forward_to_replicas) {
+            $query_params['forwardToReplicas'] = 'true';
+        }
+        if ($replace_existing) {
+            $query_params['replaceExistingSynonyms'] = 'true';
+        }
+
+        if (!empty($query_params)) {
+            $endpoint .= '?' . http_build_query($query_params);
+        }
+
+        return $this->request($endpoint, 'POST', $synonyms, true);
+    }
+
+    /**
+     * Clear all synonyms on an index.
+     *
+     * @param string $index Index name.
+     * @return array|bool
+     */
+    public function clear_synonyms($index)
+    {
+        $index_name = $this->format_index_name($index);
+        return $this->request('/1/indexes/' . rawurlencode($index_name) . '/synonyms/clear', 'POST', array(), true);
     }
 }

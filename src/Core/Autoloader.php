@@ -1,6 +1,6 @@
 <?php
 
-namespace SwiftSearch\Core;
+namespace SwiftSearchAlgolia\Core;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -30,10 +30,10 @@ class Autoloader
     public static function autoload($class)
     {
         // Project-specific namespace prefix
-        $prefix = 'SwiftSearch\\';
+        $prefix = 'SwiftSearchAlgolia\\';
 
         // Base directory for the namespace prefix
-        $base_dir = untrailingslashit(SWIFT_SEARCH_PATH) . '/src/';
+        $base_dir = untrailingslashit(SWIFT_SEARCH_ALGOLIA_PATH) . '/src/';
 
         // Does the class use the namespace prefix?
         $len = strlen($prefix);

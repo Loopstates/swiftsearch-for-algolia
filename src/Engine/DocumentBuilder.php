@@ -1,8 +1,6 @@
 <?php
 
-namespace SwiftSearch\Engine;
-
-use SwiftSearch\Core\Gatekeeper;
+namespace SwiftSearchAlgolia\Engine;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -11,49 +9,65 @@ if (!defined('ABSPATH')) {
 /**
  * Class DocumentBuilder
  *
- * Transforms a WP_Post into a Typesense document array.
+ * Transforms a WP_Post into an Algolia document object.
  */
 class DocumentBuilder
 {
-
     /**
-     * Build document from post ID.
+     * Build document from post ID or WP_Post.
      *
-     * @param int $post_id Post ID.
+     * @param int|\WP_Post $post_id Post ID or object.
      * @return array|false Document array or false if ignored.
      */
     public function build($post_id)
     {
-        $post = get_post($post_id);
+        $post = is_object($post_id) ? $post_id : get_post($post_id);
 
         if (!$post || 'publish' !== $post->post_status) {
             return false;
         }
 
+        $id = $post->ID;
+
         // Allow third-party exclusion of post
-        if (!apply_filters('swift_search_should_index_post', true, $post_id, $post)) {
+        if (!apply_filters('swift_search_algolia_should_index_post', true, $id, $post)) {
             return false;
         }
 
         // 1. Strict Whitelist Check
-        $settings = get_option('swift_search_settings', array());
-        $allowed_types = isset($settings['indexed_post_types']) ? (array) $settings['indexed_post_types'] : array('product');
+        $settings      = get_option('swift_search_algolia_settings', array());
+        $allowed_types = isset($settings['indexed_post_types']) ? (array) $settings['indexed_post_types'] : array('product', 'post', 'page');
 
         if (!in_array($post->post_type, $allowed_types)) {
             return false;
         }
 
-        // Prepare document
+        // 2. Safe Content Extraction & Truncation (Algolia Free Plan 10KB record limit safeguard)
+        $raw_content = wp_strip_all_tags(strip_shortcodes($post->post_content));
+        $max_length  = (int) apply_filters('swift_search_algolia_max_content_length', 6000, $id, $post);
+
+        if (mb_strlen($raw_content) > $max_length) {
+            $raw_content = mb_substr($raw_content, 0, $max_length);
+        }
+
+        $clean_content = apply_filters('swift_search_algolia_truncate_content', $raw_content, $id, $post);
+
+        $excerpt = $post->post_excerpt
+            ? wp_strip_all_tags($post->post_excerpt)
+            : wp_html_excerpt($clean_content, 250);
+
+        // Prepare document with Algolia's required 'objectID'
         $document = array(
-            'id' => (string) $post->ID,
-            'post_id' => $post->ID,
-            'post_title' => $post->post_title,
-            'post_content' => wp_strip_all_tags(strip_shortcodes($post->post_content)),
-            'post_excerpt' => wp_strip_all_tags($post->post_excerpt ? $post->post_excerpt : wp_html_excerpt(wp_strip_all_tags(strip_shortcodes($post->post_content)), 252)),
-            'post_type' => $post->post_type,
-            'permalink' => get_permalink($post),
+            'objectID'     => (string) $id,
+            'id'           => (string) $id,
+            'post_id'      => (int) $id,
+            'post_title'   => $post->post_title,
+            'post_content' => $clean_content,
+            'post_excerpt' => $excerpt,
+            'post_type'    => $post->post_type,
+            'permalink'    => get_permalink($post),
             'published_at' => get_post_timestamp($post),
-            'author_name' => get_the_author_meta('display_name', $post->post_author),
+            'author_name'  => get_the_author_meta('display_name', $post->post_author),
         );
 
         // Thumbnail
@@ -61,7 +75,7 @@ class DocumentBuilder
             $document['thumbnail_url'] = get_the_post_thumbnail_url($post, 'medium');
         }
 
-        // WooCommerce Price (Core Field)
+        // WooCommerce Product Data
         if (function_exists('wc_get_product') && 'product' === $post->post_type) {
             $product = wc_get_product($post);
             if ($product) {
@@ -69,19 +83,20 @@ class DocumentBuilder
                 if (is_numeric($price)) {
                     $document['price'] = (float) $price;
                 }
+                $document['sku']      = (string) $product->get_sku();
+                $document['in_stock'] = (bool) $product->is_in_stock();
             }
         }
 
-        // 2. Taxonomies & Universal Facets
-        // This unified block replaces the old hardcoded taxonomy and WooCommerce blocks.
-        if (isset($settings['facets_config']) && is_array($settings['facets_config']) && Gatekeeper::can_use_features()) {
+        // 3. Taxonomies & Facets
+        if (isset($settings['facets_config']) && is_array($settings['facets_config'])) {
             foreach ($settings['facets_config'] as $f) {
                 if (empty($f['enabled'])) continue;
 
                 $source = !empty($f['source']) ? $f['source'] : '';
-                $type = !empty($f['type']) ? $f['type'] : 'taxonomy'; // taxonomy or meta
-                
-                // Resolve Target Name
+                $type   = !empty($f['type']) ? $f['type'] : 'taxonomy';
+
+                // Target field resolution
                 $target = !empty($f['target']) ? $f['target'] : null;
                 if (!$target) {
                     if ($type === 'taxonomy') {
@@ -99,21 +114,20 @@ class DocumentBuilder
                     }
                 }
 
-                if (isset($document[$target])) continue; // Skip if already set by core
+                if (isset($document[$target])) continue;
 
                 if ($type === 'taxonomy') {
-                    $terms = get_the_terms($post_id, $source);
+                    $terms = get_the_terms($id, $source);
                     if (!empty($terms) && !is_wp_error($terms)) {
                         $term_names = wp_list_pluck($terms, 'name');
                         $document[$target] = array_values(array_unique($term_names));
                     }
                 } else {
-                    // Meta / Custom Field
-                    $meta_val = get_post_meta($post_id, $source, true);
-                    
-                    // Handle WooCommerce Special Methods for better data accuracy
+                    $meta_val = get_post_meta($id, $source, true);
+
+                    // Handle WooCommerce getters
                     if (function_exists('wc_get_product') && ('_sku' === $source || '_price' === $source || '_stock_status' === $source)) {
-                        $product = wc_get_product($post_id);
+                        $product = wc_get_product($id);
                         if ($product) {
                             if ($source === '_sku') $meta_val = $product->get_sku();
                             elseif ($source === '_price') $meta_val = $product->get_price();
@@ -121,9 +135,7 @@ class DocumentBuilder
                         }
                     }
 
-                    // Cast Types based on config
                     $data_type = !empty($f['data_type']) ? $f['data_type'] : 'string';
-                    
                     if ($data_type === 'int32' || $data_type === 'int64') {
                         $document[$target] = (int) $meta_val;
                     } elseif ($data_type === 'float') {
@@ -143,20 +155,31 @@ class DocumentBuilder
             }
         }
 
-        // 3. Additional Custom Fields (Legacy/Pro Non-Facet fields)
-        if (isset($settings['custom_fields']) && is_array($settings['custom_fields']) && Gatekeeper::can_use_features()) {
+        // Standard taxonomies fallback if not configured in facets_config
+        if (!isset($document['category'])) {
+            $categories = get_the_category($id);
+            if (!empty($categories) && !is_wp_error($categories)) {
+                $document['category'] = array_values(wp_list_pluck($categories, 'name'));
+            }
+        }
+        if (!isset($document['tag'])) {
+            $tags = get_the_tags($id);
+            if (!empty($tags) && !is_wp_error($tags)) {
+                $document['tag'] = array_values(wp_list_pluck($tags, 'name'));
+            }
+        }
+
+        // 4. Custom Meta Fields
+        if (isset($settings['custom_fields']) && is_array($settings['custom_fields'])) {
             $pt = $post->post_type;
             if (isset($settings['custom_fields'][$pt])) {
                 foreach ($settings['custom_fields'][$pt] as $field) {
-                    if (empty($field['key']) || empty($field['name']))
-                        continue;
+                    if (empty($field['key']) || empty($field['name'])) continue;
+                    if (isset($document[$field['name']])) continue;
 
-                    if (isset($document[$field['name']])) continue; // Already handled by facets
+                    $meta_val = get_post_meta($id, $field['key'], true);
 
-                    $meta_val = get_post_meta($post_id, $field['key'], true);
-
-                    // Cast Types
-                    if ($field['type'] === 'int32') {
+                    if ($field['type'] === 'int32' || $field['type'] === 'int64') {
                         $document[$field['name']] = (int) $meta_val;
                     } elseif ($field['type'] === 'float') {
                         $document[$field['name']] = (float) $meta_val;
@@ -175,6 +198,6 @@ class DocumentBuilder
             }
         }
 
-        return apply_filters('swift_search_post_document', $document, $post_id, $post);
+        return apply_filters('swift_search_algolia_post_document', $document, $id, $post);
     }
 }

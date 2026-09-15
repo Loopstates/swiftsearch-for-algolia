@@ -1,6 +1,6 @@
 <?php
 
-namespace SwiftSearch\Core;
+namespace SwiftSearchAlgolia\Core;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
  */
 class SettingsIntegrity
 {
-    const SALT_OPTION = 'swift_search_integrity_salt';
+    const SALT_OPTION = 'swift_search_algolia_integrity_salt';
 
     /**
      * Get or Generate a persistent salt for this site.
@@ -48,7 +48,7 @@ class SettingsIntegrity
     public static function sign_option($option_name, $arg2, $arg3 = null)
     {
         // specific options we care about
-        if ($option_name !== 'swift_search_settings') {
+        if ($option_name !== 'swift_search_algolia_settings') {
             return;
         }
 

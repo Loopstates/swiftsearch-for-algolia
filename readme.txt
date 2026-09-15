@@ -1,434 +1,275 @@
-=== SwiftSearch for Typesense ===
+=== SwiftSearch for Algolia ===
 Contributors: loopstates
-Tags: typesense, woocommerce, instant search, auto complete, algolia
-Requires at least: 6.0
-Tested up to: 7.1
-Stable tag: 1.6.7
-Requires PHP: 8.0.0
+Tags: algolia, woocommerce search, instant search, autocomplete, facets
+Requires at least: 5.8
+Tested up to: 6.7
+Stable tag: 1.0.0
+Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
- 
-Lightning-Fast, typo-tolerant search for WordPress, WooCommerce, CPTs, and taxonomies with direct-to-node queries, facets, and merchandising.
+
+Lightning-Fast, typo-tolerant search for WordPress, WooCommerce, CPTs, and taxonomies with direct Algolia DSN queries, facets, and merchandising.
 
 == Description ==
 
-**SwiftSearch for Typesense** is a search engine replacement for WordPress and WooCommerce. By replacing the default, resource-heavy WordPress database query search with a fast, typo-tolerant engine powered by [Typesense](https://typesense.org), SwiftSearch delivers an autocomplete experience that loads quickly.
+**SwiftSearch for Algolia** is an enterprise-grade search engine replacement for WordPress and WooCommerce. By replacing standard, resource-intensive WordPress MySQL search queries with Algolia's world-class Distributed Search Network (DSN), SwiftSearch delivers an instant, typo-tolerant search experience that loads in milliseconds.
 
-Built by [Loopstates](https://loopstates.com), SwiftSearch is architected for privacy and direct connectivity. Unlike other search plugins that route queries through a heavy middle-layer proxy, SwiftSearch connects **directly from your visitors' browser to your Typesense cluster**. No heavy PHP processes are loaded, no database queries are executed on your server, and your customer data remains secure and GDPR-compliant.
+Built by [Loopstates](https://loopstates.com), SwiftSearch is engineered around a modern **hybrid client-side architecture**. Search queries travel **directly from your visitors' browser to Algolia's nearest edge node** via the official, lightweight `algoliasearch/lite` library. Your WordPress server never executes a single database query during searches, no heavy PHP processes are spawned, and visitor traffic surges have zero impact on your hosting resources.
 
-#### Why SwiftSearch & Typesense?
-Native WordPress search lacks typo tolerance and can affect database performance under high traffic. SwiftSearch connects your site to Typesense—an open-source, developer-friendly alternative to Algolia. 
+#### Why SwiftSearch for Algolia?
+Native WordPress search is fundamentally limited: it cannot handle typos, ignores keyword relevance, and runs sluggish MySQL `LIKE '%query%'` queries that choke your database during peak traffic. Meanwhile, legacy Algolia plugins on WordPress are often abandoned, require complex developer coding, inject hundreds of kilobytes of rigid InstantSearch.js templates that break your theme, or lock essential e-commerce capabilities behind expensive monthly subscriptions.
 
-Whether you run a blog, a directory site, or a WooCommerce store, SwiftSearch ensures your visitors find exactly what they are looking for in real-time.
+SwiftSearch solves this by putting an unlocked, full-featured search powerhouse right inside your WordPress admin:
 
-**Official Documentation**: [https://docs.loopstates.com/swift-search-typesense/](https://docs.loopstates.com/swift-search-typesense/)
+* **Direct-to-DSN Edge Queries**: Sub-40ms search responses routed to Algolia's closest global edge data center, bypassing WordPress PHP entirely.
+* **100% Unlocked Core Power**: Visual facet builder, custom attribute weighting, one-way and multi-way synonyms, visual merchandising (pinning), and local search analytics are completely free and unlocked.
+* **Algolia 10KB Free Tier Guardrail**: Automatic HTML stripping and smart content truncation prevent indexing rejections, keeping your records strictly within Algolia's 10,000-byte free tier threshold while preserving all vital metadata.
+* **Automatic Virtual Replica Sorting**: Generates and syncs virtual replica indices for instant multi-criteria sorting (Price: Low to High, Price: High to Low, Date: Newest) without touching your database.
+* **Self-Hosted Search Analytics**: Search volume trends and zero-result query tracking stored directly in your WordPress database for actionable insights with zero third-party tracking.
+* **WooCommerce Native**: Automatically indexes prices, active currency formatting, sale status, inventory badges, and product attributes.
+* **Enterprise Background Sync & WP-CLI**: Self-scheduling background queue with HMAC verification to bypass host loopback firewalls (WP Engine, Kinsta), plus full WP-CLI terminal commands for 50,000+ SKU catalogs.
+
+Whether you manage a high-traffic content publication, a large WooCommerce store, or an enterprise directory, SwiftSearch ensures your visitors find exactly what they are looking for the moment they press their first keystroke.
+
+**Official Documentation**: [https://docs.loopstates.com/swiftsearch-for-algolia/](https://docs.loopstates.com/swiftsearch-for-algolia/)
 
 == Key Features ==
 
-### Millisecond Search Results
-Deliver search results in milliseconds. Because SwiftSearch connects visitors' browsers directly to your Typesense nodes, search queries bypass WordPress entirely—yielding lightning-fast results and saving server resources.
+### Sub-Millisecond Search Results via Algolia DSN
+Deliver search results in 15ms–40ms. Because SwiftSearch connects visitors' browsers directly to Algolia's 70+ global edge locations, search queries bypass WordPress and MySQL entirely—yielding instantaneous search results while offloading 100% of search compute load from your hosting server.
 
-### Autocomplete and Search-As-You-Type
-Deliver results as users type. The client-side search UI updates dynamically in real-time, fetching data directly from your nearest Typesense node.
+### Instant Autocomplete and Search-As-You-Type
+Deliver matching results the moment visitors start typing. The reactive search UI updates dynamically with each keystroke, featuring highlighted text matches, high-resolution product thumbnails, dynamic WooCommerce prices, stock status badges, and taxonomy tags.
 
-### Built-in WooCommerce Merchandising and Product Pinning
-Take control of your search results to drive sales. The Merchandising dashboard allows you to manually "pin" specific products, posts, or pages to the very top of search results for specific keywords—suited for promotional campaigns and seasonal clearance.
+### Built-in WooCommerce Merchandising & Product Pinning
+Take complete control of your search rankings to drive sales and maximize conversions. The visual Merchandising dashboard allows store managers to manually "pin" specific products, posts, or pages to the top positions (#1, #2, #3) for designated search keywords—ideal for seasonal promotions, brand campaigns, and clearance inventory.
 
-### Smart Typo Tolerance and Synonym Sets
-Never show a "No Results Found" page due to a simple spelling mistake. Typesense's typo tolerance handles spelling errors automatically. Additionally, define global multi-way Synonym Sets (compatible with Typesense v0.30+) to link terms like "laptop", "notebook", and "macbook".
+### Smart Typo Tolerance and Synonym Dictionaries
+Never lose a customer to a simple spelling mistake. Algolia's industry-leading typo tolerance automatically handles misspellings, letter transpositions, and pluralizations. Additionally, define one-way synonyms (e.g. `sneakers => shoes`) and multi-way synonym sets (e.g. `coat, jacket, outerwear`) directly in your WordPress dashboard and push them to Algolia with one click.
 
-### Real-Time Search Analytics and Zero-Result Insights
-Track exactly what your users are looking for. Our admin dashboard provides a complete overview of search volumes and trends. Most importantly, it flags "Zero Result Queries" so you can spot inventory gaps or set up synonyms for missing terms.
+### Visual Facet Builder & Metadata Mappings
+Empower shoppers to filter results dynamically without page reloads. Map any WooCommerce product attribute (Size, Color, Brand), standard taxonomy (Categories, Tags), or custom metadata field (ACF, Pods, Meta Box) into Algolia `attributesForFaceting` using our visual drag-and-drop builder with live count updates.
 
-### Custom Fields and Faceted Sidebar Navigation
-Give users the power to filter results instantly. Map any custom meta fields (such as Price, Brand, SKU, or custom metadata fields) and build multi-select facet filters using our visual drag-and-drop layout builder.
+### Automatic Replica Indices for Instant Sorting
+Algolia achieves sub-millisecond sorting via dedicated replica indices rather than runtime database queries. SwiftSearch automatically provisions and synchronizes virtual replica indices for active sort criteria (Price: Low to High, Price: High to Low, Date: Newest First) and switches indices seamlessly on the frontend without page refreshes.
 
-### Background Sync and Real-Time Updates
-When you first connect, our background sync engine processes your content in self-scheduling batches to prevent script timeouts. Once indexed, any new, updated, or deleted posts/products are synchronized.
+### Engineered for Algolia's Free Tier (10KB Record Limit Guardrail)
+The most common issue when syncing WordPress to Algolia is the strict 10,000-byte record size limit on Algolia's Free (Build) tier. SwiftSearch includes an automated content optimization engine that strips HTML tags, removes shortcodes, and intelligently truncates long body content to ~6,000 characters while preserving 100% of your crucial taxonomies, prices, and custom metadata fields.
+
+### Real-Time Search Analytics & Zero-Result Insights
+Understand user intent and discover unmet inventory demand. Our built-in analytics dashboard provides visual charts of popular search queries, volume trends, and zero-result searches stored locally in your WordPress database. Discover exactly what visitors searched for but could not find, giving you actionable data to expand your catalog or configure synonyms.
+
+### Dedicated WooCommerce Shop & Catalog Mode
+Easily replace your default WooCommerce Shop and product archive pages with a modern, high-performance search and filter catalog page. Features horizontal sort dropdowns, sticky facet sidebars with live category counts, pagination, and clean flat card styling that matches modern e-commerce standards.
+
+### Enterprise Background Sync & Real-Time Updates
+When you first connect, our self-scheduling background indexing engine processes your content in chunked batches to prevent server script timeouts. Built with stateless HMAC verification, it effortlessly bypasses loopback and cURL restrictions on cached hosts (such as WP Engine and Kinsta). Once indexed, any new, edited, or deleted posts and products are automatically synchronized in real time.
 
 ### Native WP-CLI Command-Line Integration
-For stores with large catalogs (10,000+ items) or servers with strict security firewalls that block background HTTP requests (loopback blocks), SwiftSearch includes full WP-CLI terminal commands. Run bulk indexing (`wp swift-search index`), check connection status (`wp swift-search status`), and reset indexes (`wp swift-search reset`) directly via SSH.
+For stores with massive catalogs (10,000 to 100,000+ items) or servers with strict security firewalls that block background HTTP loopbacks, SwiftSearch includes full WP-CLI terminal commands. Run bulk indexing (`wp swift-search-algolia index`), check connection status (`wp swift-search-algolia status`), and reset indices (`wp swift-search-algolia reset`) directly via SSH with custom `--batch-size`, `--offset`, and `--limit` flags.
 
-### Dedicated Shop & Catalog Page Mode
-Easily replace your default WooCommerce Shop page with a high-performance, dedicated search and filter catalog page. Features horizontal sort filters, instant category sidebar counts, pagination, and a clean flat card layout.
+### Page Builder & Shortcode Flexibility
+Customize your search experience without writing code. Control accent colors, typography, card layouts, and toggles (show/hide prices, thumbnails, excerpts, and stock) directly from the settings. It works with Elementor, Divi, Beaver Builder, Gutenberg, or any custom theme via the lightweight shortcode `[swift_search_algolia]`, or automatically overrides your theme's native search form with a single toggle.
 
-### Page Builder Friendly
-Customize the search UI without writing code. Control colors, typography, card layouts, and toggles (show/hide prices, thumbnails, and excerpts) directly from the settings. It works with Elementor, Divi, Gutenberg, or any page builder via a lightweight shortcode `[swift_search]`.
+### Complete Technical Capabilities List
+* **Direct Edge Routing**: Instant queries directly to Algolia DSN edge nodes bypassing WordPress PHP.
+* **Search-As-You-Type Autocomplete**: Reactive results modal with dynamic keyword highlighting.
+* **Visual Facet Builder**: Multi-select sidebar filters for WooCommerce attributes and custom metadata.
+* **Visual Merchandising (Pinning)**: Pin promoted products to top positions per keyword query.
+* **Searchable Attribute Weights**: Fine-tune ranking priority across titles, excerpts, content, and metadata.
+* **One-Way & Multi-Way Synonyms**: Integrated synonyms dashboard synced directly to Algolia.
+* **Automatic Virtual Replica Sorting**: Instant sorting (Price ASC/DESC, Date) without SQL queries.
+* **10KB Record Limit Guardrail**: Smart content truncation protecting Algolia Free tier accounts.
+* **Self-Hosted Search Analytics**: Local tracking of search trends and zero-result queries in WordPress DB.
+* **Zero Third-Party Tracking**: No user search logs shared with outside analytics services (GDPR-ready).
+* **Dedicated Shop & Catalog Mode**: Replaces default WooCommerce shop pages with instant-filter layout.
+* **WooCommerce Native**: Supports dynamic prices with active store currency formatting and sale badges.
+* **Custom Post Type (CPT) Support**: Index Posts, Pages, Products, Portfolios, and custom taxonomies.
+* **Advanced Custom Fields (ACF) Integration**: Search and filter by custom post metadata fields.
+* **Background Batch Sync**: Self-scheduling engine handles large catalogs without timing out.
+* **Automated Lifecycle Sync**: Index updates triggered on publish, update, trash, and restore.
+* **WP-CLI Terminal Tooling**: Bulk sync, reset, and check status via SSH with `--batch-size`, `--offset`, `--limit`.
+* **Page Builder Ready**: Integrates with Elementor, Divi, Beaver Builder, and Gutenberg blocks.
+* **No Coding Required**: Configure layouts, color schemes, and search behaviors visually.
+* **Global UI Toggles**: Show or hide thumbnails, prices, stock status, and excerpts globally.
+* **Mobile & Touch Optimized**: Fully responsive overlay and catalog layouts for phones and tablets.
+* **Algolia ToS Compliance**: Includes compliant SVG "Search by Algolia" attribution badge with admin toggle.
+* **Developer Extensible**: Built with standard JavaScript CustomEvents and WordPress PHP filters.
+* **Conflict-Free Isolation**: Completely isolated namespace, database tables, and scoped CSS/JS wrappers.
+* **Translation Ready**: Fully localized gettext catalog (`swiftsearch-for-algolia.pot`).
 
-### Features & Technical Capabilities
-*   **Instant Autocomplete**: Displays matching products and posts the moment visitors start typing.
-*   **Faceted Navigation & Filters**: Create and manage multi-select sidebar filters for taxonomies and metadata.
-*   **Merchandising & Pinning**: Fix specific items to the top of results for a curated user experience.
-*   **Result Weighting & Tuning**: Tune field importance (e.g., prioritize SKU hits over Content).
-*   **Global Synonym Sets**: Integrated synonym architecture (compatible with Typesense v0.30+).
-*   **Advanced Custom Fields Mappings**: Search and filter by custom fields (Price, SKU, Brand, etc.).
-*   **Search Analytics**: Dashboard for tracking popular searches and identifying "Zero Result" gaps.
-*   **Background Indexing**: Sync engine handles items in self-scheduling batches without timing out.
-*   **Automated Sync**: Real-time indexing when you Save, Update, or Delete content.
-*   **WP-CLI Support**: Bulk sync, reset, and check connection status from your terminal via SSH.
-*   **CPT Support**: Index Posts, Pages, Products, and Custom Post Types.
-*   **Easy Setup (No Coding Required)**: Configure search layouts, color schemes, and settings visually without writing code.
-*   **Global UI Toggles**: Show or hide Thumbnails, Prices, and Excerpts globally.
-*   **WooCommerce Search**: Optimized for product titles, prices, and product imagery.
-*   **Translation Ready**: Works perfectly with multilingual websites and translation plugins.
-*   **Mobile Ready**: Fits perfectly on all screens, including phones, tablets, and desktops.
-*   **SEO Optimized**: Keeps your website light and fast, which helps improve your Google search rankings.
-*   **Fast & Secure**: Loads search results instantly while keeping your customer data fully secure.
-*   **Automatic Updates**: Receive new features and security fixes automatically right inside your dashboard.
-*   **Full Search Replacement**: Replace the default, slow WordPress search sitewide with a single click.
-*   **Easy Placement**: Put custom search bars anywhere on your site using simple shortcodes.
-*   **Page Builder Ready**: Integrates with Elementor, Divi, and Gutenberg blocks using shortcodes or automatic form replacement.
-*   **Developer Customizable**: Built with clean standards and standard hooks/filters for advanced customization.
- 
 == Installation ==
 
-1.  Standard installation: Upload `swift-search-typesense` to your `/wp-content/plugins/` directory or install via the WordPress 'Plugins' screen.
-2.  Activate the plugin and navigate to **SwiftSearch** in your admin menu.
-3.  Follow our **8-Step Setup Wizard** in the sidebar:
-    *   **Step 1: Connect** - Enter your Typesense host, port, and API keys.
-    *   **Step 2: Content** - select your Post Types (Posts, Products, etc.) and enable the global search override.
-    *   **Step 3: Relevance** - Manage synonyms and global ranking scores.
-    *   **Step 4: Search UI** - Configure your instant search behavior and visual result toggles.
-    *   **Step 5: Styling** - Pick your accent colors and border radius.
-    *   **Step 6: Analytics** - Review your search trend dashboard.
-    *   **Step 7: Pinning** - Merchandise specific results to the top.
-    *   **Step 8: Sync** - Perform your initial bulk index to build the Typesense collection.
+1. Upload `swiftsearch-for-algolia` to the `/wp-content/plugins/` directory, or install it directly via the WordPress Plugins dashboard (**Plugins > Add New**).
+2. Activate the plugin through the **Plugins** screen in WordPress.
+3. Navigate to **SwiftSearch** in your admin sidebar.
+4. Follow our **8-Step Setup Wizard**:
+   * **Step 1: Connect** - Enter your Algolia Application ID, Admin API Key, and Search-Only API Key.
+   * **Step 2: Content** - Select which post types (Posts, Products, Pages, CPTs) to index and map custom metadata fields.
+   * **Step 3: Relevance** - Configure attribute weights and define one-way or multi-way synonyms.
+   * **Step 4: Search UI** - Configure instant autocomplete toggles, facets, and attribution badge.
+   * **Step 5: Styling** - Customize accent colors, text colors, and border radii.
+   * **Step 6: Analytics** - Review search volume trends and zero-result queries.
+   * **Step 7: Pinning** - Merchandise high-converting products to the top of specific search queries.
+   * **Step 8: Sync** - Push index settings, configure replicas, and run the initial bulk index to Algolia.
 
 == Developer Customization ==
 
-SwiftSearch is built with custom DOM event dispatching to allow advanced integrations with third-party themes and plugins (e.g. Wishlists, Ajax Add-to-Cart, or Quick View).
+SwiftSearch is built with extensible JavaScript custom event dispatching and standard WordPress PHP filter hooks for deep theme integration, custom analytics, wishlists, or headless architectures.
 
 = JavaScript Event Hooks =
-You can listen to these custom events on the document or the wrapper element:
+Listen to custom lifecycle events on the document or wrapper element:
 
-1. `swift-search:hit-rendered` - Dispatched for every individual hit/card element that is rendered.
-   * `event.detail.hit`: The raw search hit data from Typesense.
+1. `swift-search-algolia:render-hit` - Dispatched for every individual hit/card element that is rendered.
+   * `event.detail.hit`: The raw Algolia hit record.
    * `event.detail.card`: The DOM element node of the rendered card.
-   * `event.detail.collection`: The collection name (e.g. `posts`, `terms`, `users`).
+   * `event.detail.section`: The section type (e.g. `posts`, `terms`, `users`).
 
-2. `swift-search:results-rendered` - Dispatched after the entire search grid and all sections have completed rendering.
-   * `event.detail.data`: The raw search results payload returned from Typesense.
-   * `event.detail.totalFound`: Total organic hits count.
+2. `swift-search-algolia:results-rendered` - Dispatched after the entire search grid and all sections have completed rendering.
+   * `event.detail.response`: The raw search results payload returned from Algolia.
+   * `event.detail.totalFound`: Total matching hits count.
 
-= Code Example =
-`document.addEventListener('swift-search:hit-rendered', function(e) {
-    if (e.detail.collection === 'posts') {
-        const card = e.detail.card;
-        const hitData = e.detail.hit;
-        // Inject rating badges or custom hooks
+3. `swift-search-algolia:before-search` - Dispatched immediately before queries are sent to Algolia.
+   * `event.detail.query`: Current search query string.
+   * `event.detail.queries`: Array of query objects prepared for the Algolia client.
+
+= Code Example: JavaScript Customization =
+`document.addEventListener('swift-search-algolia:render-hit', function(event) {
+    const hit  = event.detail.hit;
+    const card = event.detail.card;
+
+    if (hit.post_type === 'product') {
+        const rating = hit.custom_rating || '';
+        if (rating) {
+            const badge = document.createElement('span');
+            badge.className = 'custom-rating-badge';
+            badge.innerText = '★ ' + rating;
+            card.querySelector('.ss-card-content').appendChild(badge);
+        }
     }
 });`
 
 = WordPress PHP Filters =
-Backend developers can customize data synchronization and query configurations using WordPress filters:
+Backend developers can customize data payloads, adjust indexing conditions, and modify search parameters using standard WordPress filters:
 
-1. `swift_search_post_document` - Filters the structured document data before it is sent/synced to Typesense. Use this to add custom meta fields, dynamic stock rules, or text content modifications.
-   * Arguments: `$document` (array), `$post_id` (int), `$post` (WP_Post object).
-   * Code Example (Complex Meta, HTML Sanitization & Array Handling):
-     `add_filter('swift_search_post_document', function($document, $post_id, $post) {
-         // Fetch complex custom fields (e.g. using helper functions if available)
-         if (function_exists('get_field')) {
-             $brand = get_field('brand_name', $post_id);
-             if ($brand) $document['brand'] = $brand;
-         }
-         // Strip HTML/shortcodes from WYSIWYG content
-         $wysiwyg = get_post_meta($post_id, 'hero_wysiwyg', true);
-         if ($wysiwyg) {
-             $document['hero_text'] = wp_strip_all_tags(strip_shortcodes($wysiwyg));
-         }
-         // Flatten array values for flat target fields
-         $colors = get_post_meta($post_id, 'colors', true);
-         if (is_array($colors)) {
-             $document['colors_list'] = implode(', ', $colors);
-         }
-         return $document;
-     }, 10, 3);`
+1. `swift_search_algolia_post_document` - Filters the structured document array before it is sent to Algolia. Use this to add custom ACF fields, dynamic inventory rules, or calculated metadata:
+`add_filter('swift_search_algolia_post_document', function($document, $post_id, $post) {
+    // 1. Fetch Advanced Custom Fields (ACF)
+    if (function_exists('get_field')) {
+        $brand = get_field('brand_name', $post_id);
+        if ($brand) {
+            $document['brand'] = $brand;
+        }
+    }
 
-2. `swift_search_should_index_post` - Filter returning a boolean. Return `false` to completely exclude specific posts, drafts, or out-of-stock products from the search index.
-   * Arguments: `$should_index` (bool), `$post_id` (int), `$post` (WP_Post object).
+    // 2. Strip shortcodes and HTML from WYSIWYG fields
+    $raw_wysiwyg = get_post_meta($post_id, '_custom_product_highlights', true);
+    if (!empty($raw_wysiwyg)) {
+        $document['product_highlights'] = wp_strip_all_tags(strip_shortcodes($raw_wysiwyg));
+    }
 
-3. `swift_search_vars` - Filters the configuration variables passed from PHP to the frontend JavaScript (such as API keys, weights, and enabled facets).
-   * Arguments: `$vars` (array), `$settings` (array).
+    // 3. Add custom sorting or calculated sales scores
+    $document['sales_velocity'] = (int) get_post_meta($post_id, '_total_sales_30d', true);
 
-4. `swift_search_shortcode_args` - Filters default shortcode attributes and display settings.
-   * Arguments: `$args` (array), `$atts` (array).
+    return $document;
+}, 10, 3);`
+
+2. `swift_search_algolia_should_index_post` - Return `false` to exclude specific posts, password-protected content, or out-of-stock products:
+`add_filter('swift_search_algolia_should_index_post', function($should_index, $post_id, $post) {
+    if (get_post_meta($post_id, '_is_discontinued', true) === 'yes') {
+        return false;
+    }
+    return $should_index;
+}, 10, 3);`
+
+3. `swift_search_algolia_truncate_content` - Adjust the maximum character length for body content to stay within Algolia's 10KB record threshold:
+`add_filter('swift_search_algolia_truncate_content', function($content, $max_length, $post_id) {
+    return mb_substr($content, 0, 5000);
+}, 10, 3);`
+
+4. `swift_search_algolia_settings` - Customize the compiled Algolia index settings array before pushing to Algolia API:
+`add_filter('swift_search_algolia_settings', function($settings, $config, $base_index_name) {
+    $settings['separatorsToIndex'] = '-_';
+    return $settings;
+}, 10, 3);`
 
 == Privacy & Compliance ==
 
-SwiftSearch is designed with a "Privacy First" architecture:
-- **Zero Middleware**: We do NOT use any proxy or Loopstates-hosted servers. Search queries go directly from the user's browser to **your** Typesense cluster.
-- **Self-Contained**: All configuration, analytics data, and result pinning rules are stored locally in your WordPress database.
-- **GDPR Ready**: Since you control the Typesense node, you maintain full ownership of the search logs and user data flow.
-- **100% Free & Open Source**: No telemetry, no third-party data disclosure, and no licensing hooks.
+SwiftSearch is designed with a direct, privacy-conscious architecture:
+* **Zero Middle-Layer Proxy**: Search queries go directly from your visitor's browser to your own Algolia application. No search traffic is routed through Loopstates servers.
+* **Self-Contained Analytics**: Search logs and zero-result query tracking data are stored locally in your WordPress database.
+* **GDPR Ready**: Visitors query Algolia's secure infrastructure directly under your own Algolia Data Processing Agreement (DPA).
 
+== Known Limitations & Best Practices ==
 
-
-== Known Limitations ==
-
-1. **Search-Only Keys**: For public-facing sites, we recommend using a "Search Only" API key from Typesense for frontend queries. Using your Admin key on the frontend is a security risk.
-2. **Schema Sensitivity**: Changing core settings (like adding a new Facet or Custom Field) modifies the underlying Typesense schema. A full **Re-Index** (Step 8) is required after such changes.
-3. **Background Sync**: Initial indexing of large catalogs (10k+ items) can take a few minutes via the sync engine.
+1. **Search-Only Keys on Frontend**: For public-facing sites, always use a "Search-Only" API Key for frontend visitors. SwiftSearch keeps your Admin API Key confidential on your server for background indexing.
+2. **10KB Record Limit**: Algolia's Free tier enforces a 10KB limit per record. SwiftSearch automatically strips HTML tags and truncates long body content to ~6,000 characters while preserving all custom metadata and facet fields.
+3. **Replica Indices Count**: Algolia limits total index count per account tier. SwiftSearch only creates replica indices for the specific sorting options enabled in your admin settings.
 
 == Frequently Asked Questions ==
 
-= Do I need a Typesense server? =
-Yes. You need a running Typesense instance. This can be [Typesense Cloud](https://cloud.typesense.org) or a self-hosted node on your own VPS.
+= Do I need an Algolia account? =
+Yes. You need an Algolia account to host your search index. Algolia provides a Free (Build) plan that includes up to 10,000 search records and 10,000 search requests per month with no credit card required to get started.
 
-= Is Typesense free? =
-Typesense is open-source and free to self-host. If you prefer a managed solution, Typesense Cloud offers a paid tier.
+= How does SwiftSearch compare to legacy Algolia plugins? =
+Unlike legacy plugins that rely on heavy 300KB+ InstantSearch.js templates or require manual PHP templating, SwiftSearch uses a modern hybrid client: official lightweight network transport (`algoliasearch/lite`) combined with a bespoke, zero-bloat UI engine. It includes a visual facet builder, visual product pinning, synonym manager, and local analytics out of the box with zero coding required.
 
-= Does this work with WooCommerce? =
-Absolutely. SwiftSearch is WooCommerce-native, indexing product titles, prices, SKUs, and thumbnails automatically.
+= What are the Application ID, Admin API Key, and Search-Only API Key? =
+You can find all three in your Algolia Dashboard under **Settings > API Keys**:
+* **Application ID**: The unique identifier for your Algolia cluster.
+* **Admin API Key**: Used securely on your server for batch indexing and index configuration. Never exposed to frontend visitors.
+* **Search-Only API Key**: A restricted public key used by frontend visitors to execute searches securely.
+
+= Does SwiftSearch work with WooCommerce? =
+Absolutely. SwiftSearch is WooCommerce-native out of the box, indexing product titles, prices (with active WooCommerce currency symbol and position formatting), sale badges, SKUs, inventory status, categories, and attributes.
 
 = How fast is the search? =
-Because of our "Zero-Middleware" architecture, search results are typically returned directly from the browser to your nearest Typesense node.
+Because of our hybrid architecture, search queries are sent directly from the visitor's browser to Algolia's Distributed Search Network (DSN) edge nodes. Queries typically return in **15ms – 40ms**, completely eliminating the 500ms–1500ms delay of traditional WordPress MySQL searches.
 
-= What is Result Pinning? =
-Result Pinning (Merchandising) allows you to manually force specific items to the top of results for a given keyword—ideal for boosting sales of specific products or featured content.
+= What is Result Pinning (Merchandising)? =
+Result Pinning allows store owners to manually force specific products or posts to the very top of search results for a designated search term—ideal for promotional campaigns, featured brand partnerships, or clearing seasonal inventory.
 
-= How do Synonym Sets improve search? =
-They allow you to link similar terms together (e.g., "watch", "clock", "timepiece"). If a user searches for one, results for all are returned, improving discovery.
+= How do Synonyms improve search? =
+They allow you to link equivalent terms together. You can configure one-way synonyms (e.g. `sneakers => shoes`) or multi-way synonym sets (e.g. `coat, jacket, parka`). When a user searches for any linked term, Algolia returns relevant results automatically, preventing zero-result drop-offs.
 
-= Is the Background Indexing free? =
-Yes! Our background sync engine is included to ensure every user has a stable search experience.
+= Does this plugin display the "Search by Algolia" logo? =
+Yes. Algolia's Terms of Service for free-tier accounts require displaying a "Search by Algolia" attribution badge. SwiftSearch provides a clean, modern, and unobtrusive SVG badge in the search overlay footer, with an admin toggle available for paid Algolia accounts.
 
-= What is the Facet Configurator? =
-It's a visual builder found in Step 4 that allows you to easily create and manage multi-select sidebar filters for categories, tags, and custom meta.
+= How do I index large catalogs (10,000+ products)? =
+For large catalogs or managed hosting providers with strict script timeouts (WP Engine, Kinsta, SiteGround), we recommend using WP-CLI:
+`wp swift-search-algolia index --batch-size=500`
 
-= Does it work with Elementor or Divi? =
-Yes. You can use the `[swift_search]` shortcode in any page builder module, or enable the "Override Default" toggle to automatically replace your theme's search form.
-
-= Is my user's data secure? =
-Yes. We do NOT use a proxy server. All search interactions happen locally between your visitor and your Typesense cluster. No search data is sent to Loopstates.
-
-= Does it handle variable products? =
-Yes, you can map custom metadata (like variation SKUs and prices) to ensure users can find exact product variations in one click.
+= Does it work with Elementor, Divi, or Gutenberg? =
+Yes. You can place the `[swift_search_algolia]` shortcode into any page builder module, or enable the "Override Default Search" toggle to automatically replace your theme's native search form.
 
 = What insights does Search Analytics provide? =
-Track your **Most Searched Keywords**. Our dashboard provides an overview of user trends, keyword volume, and search behavior. It also identifies "Zero Result" queries, giving you a roadmap to optimize your product catalog and content strategy.
+Our built-in analytics dashboard tracks your most searched terms, keyword volume trends, and zero-result queries right inside your WordPress admin. Zero-result queries show you exactly what visitors wanted to buy but could not find, giving you actionable data to expand inventory or configure synonyms.
 
-
+= Can I customize search result cards with custom code? =
+Yes. SwiftSearch dispatches standard JavaScript CustomEvents (`swift-search-algolia:render-hit`, `swift-search-algolia:results-rendered`) and provides WordPress PHP filters (`swift_search_algolia_post_document`) so developers can inject ratings, badges, or custom buttons effortlessly.
 
 == Screenshots ==
 
-1. **Connection Settings**: Configure direct-to-node cluster credentials and Search-Only keys.
+1. **Connection Settings**: Configure Algolia Application ID, Admin API Key, and Search-Only API Key.
 2. **Content Settings**: Choose searchable post types and register custom field mappings.
-3. **Relevance and Synonyms**: Manage base search weights and register synonym sets.
-4. **Search UI Configuration**: Setup autocomplete toggles, facets sidebar, and item limits.
-5. **Styling Customizer**: Visually customize colors and border radius.
+3. **Relevance and Synonyms**: Manage attribute weighting sliders and define one-way or multi-way synonyms.
+4. **Search UI Configuration**: Setup instant autocomplete toggles, facets sidebar, and item limits.
+5. **Styling Customizer**: Visually customize colors, fonts, and border radii to match your theme.
 6. **Search Analytics Dashboard**: Track search volume trends and flag zero-result queries.
-7. **Merchandising and Pinning**: Pin selected products or posts to the top of search results.
+7. **Merchandising & Pinning**: Pin selected products or posts to the top of search results.
 8. **Sync Management**: Run bulk indexing processes and monitor real-time sync status logs.
 
-== Upgrade Notice ==
-= 1.6.2 =
-Fixes a WP-CLI progress bar hang on hosts with strict loop filters by fetching raw excerpts directly without applying layout and translation hooks.
-
-= 1.6.1 =
-Fixes background sync failures ("Invalid Nonce" errors) on cached hosts like WP Engine by utilizing a secure stateless HMAC signature, and resolves a double-execution performance bug.
-
-= 1.6.0 =
-Adds full WP-CLI terminal support for bulk indexing, search index resetting, and server status checks. Highly recommended for stores with large catalogs.
-
-= 1.5.0 =
-Features a dedicated Shop/Catalog layout mode replacing WooCommerce defaults, plus JS developer events for custom hit/result DOM rendering logic. Please update immediately.
-
-= 1.4.9 =
-Upgraded Chart.js to v4.5.1 and resolved the REST API permission callback warning for the logging endpoint. Please update immediately.
-
-= 1.4.8 =
-Removed Coming Soon settings placeholders, updated the feature descriptions list, and upgraded the Chart.js vendor library to v4.4.4. Please update immediately.
-
-= 1.4.7 =
-Upgraded admin styling to include Plus Jakarta Sans font and unified input/select heights. Please update immediately.
-
-= 1.4.6 =
-Minor bug fixes to resolve the browser-driven sync infinite loop. Please update immediately.
-
-= 1.4.5 =
-Robust browser fallback for servers with loopback/cURL security restrictions. Please update immediately.
- 
 == Changelog ==
 
-= 1.6.7 =
-* Fix: Resolved an issue where the "Disconnect" button failed to clear server settings or disconnect from the Typesense server.
-* Fix: Resolved price display defaulting to a dollar sign ($) by dynamically formatting card prices based on active WooCommerce currency symbol and position settings.
-* Fix: Resolved custom styling and layout options failing to save on the "Styling & UI" configuration tab.
-* Feature: Added a "Factory Reset" option in settings to easily clear all local configuration mappings and start fresh without uninstalling the plugin.
-* Improvement: Enhanced the uninstallation database cleanup sequence to ensure all settings and tables are completely removed upon deletion.
-
-= 1.6.6 =
-* Improvement: Automatically sanitize default proposed target names to match Typesense field naming standards.
-* Compatibility: Full support for WordPress 7.1.
-* Documentation: Added developer hooks examples for complex metadata fields, HTML tag stripping, and array formatting.
-
-= 1.6.5 =
-* Fix: Resolved an issue where searches with zero results were not logged to analytics.
-* Fix: Bypassed nonce check on the analytics logging endpoint to prevent 403 blocks on cached sites.
-* Fix: Merged mapped custom fields during pro config loads.
-* Improvement: Displayed detailed validation and server errors in the settings panel.
-* Robustness: Handled individual query failures inside multi-search responses.
-
-= 1.6.4 =
-* Fix: Resolved WooCommerce price filter compatibility issue.
-* Compatibility: Full support for WordPress 7.0.4.
-
-= 1.6.3 =
-* Fix: Responsive multi-instance layout bug. Scoped frontend search event listeners relatively to wrapper class instances.
-
-= 1.6.2 =
-* Fix: Prevented WP-CLI progress bar hangs by bypassing WordPress rendering layout/builder filters on post excerpts during CLI indexing.
-
-= 1.6.1 =
-* Fix: Implemented secure stateless HMAC signature validation for background processes to prevent cookie-less loopback authentication errors on cached hosts.
-* Fix: Resolved a performance bug causing double execution of async batch dispatches during indexing loop recursion.
-
-= 1.6.0 =
-* Feature: Native WP-CLI integration. Adds terminal commands (`wp swift-search index`, `wp swift-search reset`, `wp swift-search status`) to handle large catalog indexing without timeouts.
-* UI: Added WP-CLI helper command notice on the Sync management dashboard tab.
-
-= 1.5.0 =
-* Feature: Dedicated Shop & Catalog Page Mode replacing WooCommerce default shop page with horizontal sorting, sticky pagination, and flat card aesthetics.
-* Developer: Added custom JavaScript DOM events (`swift-search:hit-rendered` and `swift-search:results-rendered`) to support custom integrations (wishlists, ratings, ajax cart).
-* Fix: Resolved price sorting returning zero results by indexing price as a float and utilizing Typesense `missing_values` parameter support.
-
-= 1.4.9 =
-* Library: Upgraded Chart.js to v4.5.1.
-* Security: Resolved REST API permission callback warning for the /log endpoint.
-
-= 1.4.8 =
-* Library: Upgraded Chart.js to v4.4.4.
-* UI: Removed inactive Coming Soon settings placeholders from styling card.
-* Documentation: Consolidated key features and capabilities in the readme file.
-
-= 1.4.7 =
-* Design: Introduced Plus Jakarta Sans font family.
-* Design: Modernized overall admin UI dashboard variables, card borders, radii, and shadows.
-* Fix: Unified text/number inputs and select elements heights to prevent alignment mismatch in connection settings card.
-
-= 1.4.6 =
-* Fix: Resolved a bug where browser-driven indexing fallback ran recursively in an infinite loop upon completion.
-* Fix: Set active flag to false in the database when completing index types that are disabled (e.g. user indexing).
-
-= 1.4.5 =
-* Feature: Added automatic browser-driven AJAX fallback for servers with local loopback or cURL block restrictions (e.g. OpenResty WAF 403 Forbidden blocks).
-* Improvement: Added real-time loopback diagnostics printed to the browser developer tools console.
-* Maintenance: Force-bust CSS/JS browser cache by appending dynamic version timestamps in admin.
-
-= 1.4.4 =
-* Security: Implemented universal sanitization for all background processes and REST API inputs.
-* Compliance: Refined admin asset enqueuing logic to use official WordPress Screen IDs instead of URL parameters.
-* Compliance: Added proper PHPCS logic annotations for all direct database queries on custom tables.
-* Compliance: Finalized template variable prefixing ($swift_search_pt) across the entire admin dashboard.
-
-= 1.4.3 =
-* Security: Complete SQL hardening by removing all variable interpolation from $wpdb->prepare statements.
-* Security: Implemented mandatory nonce verification and strict input sanitization for all processes.
-* Compliance: Prefixed all internal hooks and variables to ensures zero collisions.
-* Compliance: Replaced legacy strip_tags() with wp_strip_all_tags() and fixed deprecated parameters.
-* Maintenance: Truncated short description to <150 characters as per repository requirements.
-
-= 1.4.2 =
-* Fix: Resolved a "ReferenceError: resolve is not defined" in the frontend search script that caused search clusters to fail during user input.
-* Improved: Hardened frontend fetch logic to gracefully handle network timeouts and server errors.
-
-= 1.4.1 =
-* Fix: Resolved a critical JavaScript syntax error in the admin dashboard that caused the "Connect" button to fail silently.
-* Improved: Enhanced REST API error reporting for Typesense connection handshakes to provide localized, actionable feedback.
-* Stability: Properly scoped variables and added robust XHR error parsing to prevent UI lockups.
-
-= 1.4.0 =
-* Security: Hardened all database interactions with $wpdb->prepare() for SQL injection prevention.
-* Security: Implemented wp_unslash() and safe input handling for background indexing processes.
-* Compliance: Replaced legacy strip_tags() with wp_strip_all_tags().
-* Compliance: Removed redundant textdomain loading to follow WP.org central translation policy.
-* Maintenance: Updated wp_count_terms() and date functions for WordPress 6.7 compatibility.
- 
-= 1.3.20 =
-* Security: Hardened server-side validation for Synonyms, Weights, and Facet parameters.
-* Security: Implemented frontend data masking to prevent configuration leakage.
-* Security: Optimized Indexer protection to block unauthorized metadata extraction.
-* Performance: Optimized connection checking with static caching in Gatekeeper.
- 
-= 1.3.19 =
-* Fix: Corrected accidental "faded" disabled style from the "Show Excerpts" setting.
- 
-= 1.3.18 =
-* Fix: Resolved critical "undefined" JavaScript error when loading the admin dashboard.
-* Maintenance: Removed orphaned references to legacy shortcode overrides.
- 
-= 1.3.17 =
-* UX: Reordered Search UI tab to place Experience Options at the top.
-* Feature: Fully implemented Frontend visibility toggles for Thumbnails, Prices, and Excerpts.
-* Roadmap: Added "Coming Soon" placeholders for Sort Results and Floating Mobile Button.
-* Fix: Cleaned up redundant Instant Search override from Shortcode Generator.
- 
-= 1.3.16 =
-* Refactor: Reorganized Experience settings to prioritize Global defaults over overrides.
-* Feature: Moved Thumbnail, Price, and Excerpt toggles to Global Experience Options.
-* Fix: Consolidate Shortcode Generator to only output attributes for explicit overrides.
-* Fix: Resolved a structural JavaScript error in `admin.js` that was breaking state restoration.
- 
-= 1.3.15 =
-* UI Optimization: Consolidated redundant "Instant Search" setting in the admin dashboard.
-* Roadmap: Labeled Sort and Mobile experience options as "Coming Soon" to accurately reflect current implementation status.
-* Improved UX: Corrected feature descriptions and added visual states for disabled roadmap settings.
- 
-= 1.3.14 =
-* Fix: Resolved a critical JavaScript ReferenceError in search results processing.
-* Improved: Stabilized organic match counting for analytics.
- 
-= 1.3.12 =
-* Fix: Improved search analytics accuracy by excluding pinned items from organic match counts.
-* Improvement: Added CSS hooks for identifying pinned items in search results.
- 
-= 1.3.11 =
-* Fix: Search tracking for zero-result queries (previously skipped, now correctly populates analytics dashboard).
-* UI: Removed redundant synonym path debug buttons to clean up settings dashboard.
- 
-= 1.3.10 =
-* Fix: Modernized Typesense v0.30+ Global Synonym linking via collection schema patching.
-* Improvement: Dynamic admin UI for collection management (cached for performance).
-* UI: Fixed layout breakage in Relevance settings tab.
- 
-= 1.3.0 =
-* New: Full support for Typesense v0.30.1+ Global Synonym Sets.
-* Fix: Resolved 404 errors during synonym synchronization on modern Cloud clusters.
-* Improvement: Enhanced error reporting in Admin UI.
-* Improvement: Multi-way synonym support for better search expansion.
- 
-= 1.2.7 =
-* Fix: Resolved synonym saving and Typesense synchronization logic mismatch.
-* Fix: Prevented 'undefined' string rendering in the admin synonyms list.
- 
-= 1.2.4 =
-* Fix: 'Advanced Data' custom fields now correctly persist deletions in the database.
-* New: Dynamic Search Results heading based on active post types (e.g. 'Products' vs 'Products & Posts').
-* New: Strict Post-Type filtering in search queries to prevent old content from appearing.
-* UX: Added 'Re-index Required' warning when searchable content types are changed.
- 
-= 1.2.3 =
-* Fix: Critical configuration bottleneck in ConfigLoader.php resolved.
-* Improvement: Enhanced Typesense Response logging for diagnostic transparency.
-* Version: Synced core logic with Universal Facet Registration Bridge.
- 
-= 1.2.1 =
-* Fix: Resolved an issue where some enabled facets were hidden in the frontend sidebar due to redundant validation logic.
- 
-= 1.2.0 =
-* New: Universal Facet Registration Bridge.
-* New: Advanced Facet Settings (Target Mapping & Data Types).
-* Fix: Zero-results for numeric/boolean facets by implementing type-safe filtering.
-* Improvement: Unified schema and indexing logic for all WordPress plugins.
- 
-= 1.0.22 =
-* Fix: Facet configuration freezing on load due to data type mismatch.
-* Fix: Security warning persistence after saving settings.
-* Fix: Improved error handling for PHP-to-JS data serialization.
- 
-= 1.0.21 =
-* Fix: Saved Custom Fields button visibility.
-* Improvement: Connection workflow.
- 
 = 1.0.0 =
-* Initial release.
+* Initial release of SwiftSearch for Algolia.
+* Direct browser-to-Algolia query architecture via `algoliasearch/lite`.
+* Automatic index settings generation (`searchableAttributes`, `attributesForFaceting`, `customRanking`).
+* Sort support using Algolia Virtual Replicas (Price ASC/DESC, Date ASC/DESC).
+* Record size guardrail with smart content truncation protecting Algolia 10KB free limits.
+* Built-in visual merchandising and client-side hit pinning.
+* Support for one-way (`root => synonyms`) and multi-way (`syn1, syn2`) synonyms.
+* Local search analytics dashboard with zero-result query tracking.
+* Dedicated Catalog and Shop layout mode replacing WooCommerce default shop pages.
+* WP-CLI integration (`wp swift-search-algolia index`, `wp swift-search-algolia status`, `wp swift-search-algolia reset`).
+* Compliant SVG "Search by Algolia" attribution badge with admin toggle.

@@ -1,5 +1,5 @@
 <?php
-namespace SwiftSearch\Engine;
+namespace SwiftSearchAlgolia\Engine;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
  */
 class BackgroundProcess
 {
-    protected $action = 'swift_search_async_process';
+    protected $action = 'swift_search_algolia_async_process';
 
     public function __construct()
     {
@@ -32,12 +32,12 @@ class BackgroundProcess
     {
         $url = admin_url('admin-ajax.php');
 
-        $secret = get_option('swift_search_bg_secret');
+        $secret = get_option('swift_search_algolia_bg_secret');
         if (empty($secret)) {
             $secret = wp_generate_password(32, false);
-            update_option('swift_search_bg_secret', $secret);
+            update_option('swift_search_algolia_bg_secret', $secret);
         }
-        $token = hash_hmac('sha256', 'swift_search_async_bg', $secret);
+        $token = hash_hmac('sha256', 'swift_search_algolia_async_bg', $secret);
 
         $args = array(
             'timeout' => 0.01,
@@ -47,7 +47,7 @@ class BackgroundProcess
                 'nonce' => $token,
                 'data' => $data,
             ),
-            'sslverify' => apply_filters('swift_search_https_local_ssl_verify', false),
+            'sslverify' => apply_filters('swift_search_algolia_https_local_ssl_verify', false),
         );
 
         wp_remote_post($url, $args);
@@ -75,7 +75,7 @@ class BackgroundProcess
                     'time' => time(),
                 );
             }
-            update_option('swift_search_debug_loopback', $log);
+            update_option('swift_search_algolia_debug_loopback', $log);
         }
     }
 
@@ -95,8 +95,8 @@ class BackgroundProcess
          */
         // Sanitize Nonce and Data
         $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        $secret = get_option('swift_search_bg_secret');
-        $expected = $secret ? hash_hmac('sha256', 'swift_search_async_bg', $secret) : '';
+        $secret = get_option('swift_search_algolia_bg_secret');
+        $expected = $secret ? hash_hmac('sha256', 'swift_search_algolia_async_bg', $secret) : '';
 
         if (empty($expected) || !hash_equals($expected, $nonce)) {
             wp_die('Invalid Nonce');

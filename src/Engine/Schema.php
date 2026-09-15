@@ -1,5 +1,5 @@
 <?php
-namespace SwiftSearch\Engine;
+namespace SwiftSearchAlgolia\Engine;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -8,162 +8,238 @@ if (!defined('ABSPATH')) {
 /**
  * Class Schema
  * 
- * Defines the Typesense Collection Schema.
+ * Generates Algolia Index Settings, searchableAttributes priority,
+ * attributesForFaceting, and replica sort ranking definitions.
  */
 class Schema
 {
-    const VERSION = '1.2.6';
+    const VERSION = '2.0.0';
 
     /**
-     * Get the schema definition for the main collection.
+     * Get settings payload for the main posts index.
      *
-     * @param array $config Configuration object.
+     * @param array  $config           Plugin configuration.
+     * @param string $base_index_name  Base index name (e.g. "posts" or "wp_posts").
      * @return array
      */
-    public static function get_schema($config = array())
+    public static function get_settings($config = array(), $base_index_name = 'posts')
     {
-        $fields = array(
-            array('name' => 'post_id', 'type' => 'int64'),
-            array('name' => 'post_title', 'type' => 'string'),
-            array('name' => 'post_content', 'type' => 'string'),
-            array('name' => 'post_excerpt', 'type' => 'string'),
-            array('name' => 'post_type', 'type' => 'string', 'facet' => true),
-            array('name' => 'permalink', 'type' => 'string'),
-            array('name' => 'thumbnail_url', 'type' => 'string', 'optional' => true),
-            array('name' => 'price', 'type' => 'float', 'optional' => true, 'sort' => true, 'facet' => true),
-            array('name' => 'category', 'type' => 'string[]', 'facet' => isset($config['enable_facets']) ? $config['enable_facets'] : true, 'optional' => true),
-            array('name' => 'tag', 'type' => 'string[]', 'facet' => true, 'optional' => true),
-            array('name' => 'published_at', 'type' => 'int64', 'sort' => true),
-            array('name' => 'author_name', 'type' => 'string', 'facet' => true, 'optional' => true),
+        // 1. Searchable Attributes ordered by weight (descending)
+        $weights = isset($config['weights']) && is_array($config['weights']) ? $config['weights'] : array(
+            'post_title'   => 10,
+            'sku'          => 8,
+            'category'     => 6,
+            'tag'          => 5,
+            'post_excerpt' => 3,
+            'post_content' => 2,
         );
 
-        // 1. Facets from Config (Universal Bridge)
-        // This replaces the old hardcoded WooCommerce and tax_ prefix logic.
+        arsort($weights);
+
+        $searchable_attributes = array();
+        foreach ($weights as $field => $weight) {
+            if ($weight <= 0) {
+                continue;
+            }
+            // Use unordered for heavy text fields to improve performance
+            if ($field === 'post_content') {
+                $searchable_attributes[] = 'unordered(post_content)';
+            } else {
+                $searchable_attributes[] = $field;
+            }
+        }
+
+        // Add custom fields if not already present
+        if (isset($config['custom_fields']) && is_array($config['custom_fields'])) {
+            foreach ($config['custom_fields'] as $pt => $cf_list) {
+                if (!is_array($cf_list)) continue;
+                foreach ($cf_list as $cf) {
+                    if (empty($cf['name'])) continue;
+                    $field_name = $cf['name'];
+                    if (!in_array($field_name, $searchable_attributes) && !in_array("unordered($field_name)", $searchable_attributes)) {
+                        $searchable_attributes[] = $field_name;
+                    }
+                }
+            }
+        }
+
+        if (empty($searchable_attributes)) {
+            $searchable_attributes = array('post_title', 'unordered(post_content)', 'post_excerpt');
+        }
+
+        // 2. Attributes for Faceting
+        $facets = array(
+            'filterOnly(post_type)',
+            'price',
+            'category',
+            'tag',
+            'author_name',
+        );
+
         if (isset($config['facets_config']) && is_array($config['facets_config'])) {
-            $existing_names = array_column($fields, 'name');
             foreach ($config['facets_config'] as $f) {
-                // Basic validation
                 if (empty($f['enabled'])) continue;
-                
-                // Resolve target name. In new system, we expect 'target'. 
-                // For backward compatibility, we fallback to logic.
+
                 $target = !empty($f['target']) ? $f['target'] : null;
                 if (!$target) {
-                    if ($f['type'] === 'taxonomy') {
+                    if (($f['type'] ?? '') === 'taxonomy') {
                         if ($f['source'] === 'category') $target = 'category';
                         elseif ($f['source'] === 'post_tag') $target = 'tag';
                         else $target = 'tax_' . $f['source'];
-                    } elseif ($f['source'] === '_sku') {
+                    } elseif (($f['source'] ?? '') === '_sku') {
                         $target = 'sku';
+                    } elseif (($f['source'] ?? '') === '_price') {
+                        $target = 'price';
+                    } elseif (($f['source'] ?? '') === '_stock_status') {
+                        $target = 'in_stock';
                     } else {
-                        $target = $f['source'];
+                        $target = $f['source'] ?? '';
                     }
                 }
 
-                if (in_array($target, $existing_names)) continue;
-
-                // Resolve Type (Facets are usually string[] for taxonomies, but flexible for meta)
-                $type = !empty($f['data_type']) ? $f['data_type'] : 'string';
-                if ($f['type'] === 'taxonomy') $type = 'string[]';
-
-                $fields[] = array(
-                    'name' => $target,
-                    'type' => $type,
-                    'facet' => true,
-                    'optional' => true
-                );
-                $existing_names[] = $target;
-            }
-        }
-
-        // 2. Custom Fields (Pro)
-        if (isset($config['custom_fields']) && is_array($config['custom_fields'])) {
-            $existing_names = array_column($fields, 'name');
-            foreach ($config['custom_fields'] as $pt => $cf_list) {
-                if (!is_array($cf_list))
-                    continue;
-                foreach ($cf_list as $cf) {
-                    if (empty($cf['name']) || empty($cf['type']))
-                        continue;
-
-                    // Deduplicate
-                    if (in_array($cf['name'], $existing_names))
-                        continue;
-
-                    $fields[] = array(
-                        'name' => $cf['name'],
-                        'type' => $cf['type'],
-                        'facet' => isset($cf['facet']) && $cf['facet'],
-                        'optional' => true,
-                    );
-                    $existing_names[] = $cf['name'];
+                if (!empty($target) && !in_array($target, $facets) && !in_array("filterOnly($target)", $facets) && !in_array("searchable($target)", $facets)) {
+                    // For taxonomies, enable searchable facets for large collections
+                    if (($f['type'] ?? '') === 'taxonomy') {
+                        $facets[] = 'searchable(' . $target . ')';
+                    } else {
+                        $facets[] = $target;
+                    }
                 }
             }
         }
 
-        // Smart Config Overrides
-        $default_sort = isset($config['default_sorting_field']) ? $config['default_sorting_field'] : 'published_at';
+        // 3. Dynamic Replicas for Sorting
+        $sort_options = isset($config['sort_options']) && is_array($config['sort_options'])
+            ? $config['sort_options']
+            : array('price_asc', 'price_desc', 'date_desc');
 
-        return array(
-            'name' => 'posts',
-            'fields' => $fields,
-            'default_sorting_field' => $default_sort,
+        $replicas = array();
+        foreach ($sort_options as $sort_key) {
+            $replicas[] = self::get_replica_index_name($base_index_name, $sort_key);
+        }
+
+        // 4. Custom Ranking (Default is newest posts first)
+        $custom_ranking = array('desc(published_at)');
+
+        // 5. Build settings array
+        $settings = array(
+            'searchableAttributes'  => array_values($searchable_attributes),
+            'attributesForFaceting' => array_values(array_unique($facets)),
+            'customRanking'         => $custom_ranking,
+            'attributesToRetrieve'  => array('*'),
+            'attributesToHighlight' => array('post_title', 'post_content', 'post_excerpt'),
+            'highlightPreTag'       => '<mark>',
+            'highlightPostTag'      => '</mark>',
+            'typoTolerance'         => $config['typo_tolerance'] ?? true,
         );
+
+        if (!empty($replicas)) {
+            $settings['replicas'] = array_values(array_unique($replicas));
+        }
+
+        return apply_filters('swift_search_algolia_settings', $settings, $config, $base_index_name);
     }
 
     /**
-     * Get the schema definition for the terms collection.
-     */
-    public static function get_terms_schema($config = array())
-    {
-        return array(
-            'name' => 'terms',
-            'fields' => array(
-                array('name' => 'term_id', 'type' => 'int64'),
-                array('name' => 'name', 'type' => 'string'), // Facet? Maybe not needed for name
-                array('name' => 'slug', 'type' => 'string'),
-                array('name' => 'taxonomy', 'type' => 'string', 'facet' => true),
-                array('name' => 'url', 'type' => 'string'),
-                array('name' => 'count', 'type' => 'int32'),
-            ),
-            'default_sorting_field' => 'count', // Relevance? Browsing usually by popular
-        );
-    }
-
-    /**
-     * Get the schema definition for the users collection.
-     */
-    public static function get_users_schema($config = array())
-    {
-        return array(
-            'name' => 'users',
-            'fields' => array(
-                array('name' => 'user_id', 'type' => 'int64'),
-                array('name' => 'display_name', 'type' => 'string'),
-                array('name' => 'user_login', 'type' => 'string'),
-                array('name' => 'avatar_url', 'type' => 'string', 'optional' => true),
-                array('name' => 'url', 'type' => 'string'),
-            ),
-            // No default sort, relevance is key
-        );
-    }
-
-    /**
-     * Generate a deterministic hash of the current schema definition.
-     * Used to detect if the remote/local settings have changed requiring reindex.
+     * Get the replica index name for a given sort option.
      *
-     * @param array $config
+     * @param string $base_index_name
+     * @param string $sort_key
      * @return string
      */
-    public static function get_hash($config)
+    public static function get_replica_index_name($base_index_name, $sort_key)
     {
-        $posts = self::get_schema($config);
-        $terms = self::get_terms_schema($config);
-        $users = self::get_users_schema($config);
+        return $base_index_name . '_' . sanitize_key($sort_key);
+    }
 
-        $composite = array('posts' => $posts, 'terms' => $terms, 'users' => $users);
+    /**
+     * Get ranking rules and settings for a specific replica index.
+     *
+     * @param string $sort_key
+     * @return array
+     */
+    public static function get_replica_settings($sort_key)
+    {
+        $custom_ranking_rule = '';
 
-        // Serialize and hash to get unique fingerprint
+        switch ($sort_key) {
+            case 'price_asc':
+                $custom_ranking_rule = 'asc(price)';
+                break;
+            case 'price_desc':
+                $custom_ranking_rule = 'desc(price)';
+                break;
+            case 'date_asc':
+                $custom_ranking_rule = 'asc(published_at)';
+                break;
+            case 'date_desc':
+            default:
+                $custom_ranking_rule = 'desc(published_at)';
+                break;
+        }
+
+        return array(
+            'ranking' => array(
+                $custom_ranking_rule,
+                'typo',
+                'geo',
+                'words',
+                'filters',
+                'proximity',
+                'attribute',
+                'exact',
+                'custom',
+            ),
+        );
+    }
+
+    /**
+     * Get settings for the terms index.
+     *
+     * @param array $config
+     * @return array
+     */
+    public static function get_terms_settings($config = array())
+    {
+        return array(
+            'searchableAttributes'  => array('name', 'slug', 'taxonomy'),
+            'attributesForFaceting' => array('filterOnly(taxonomy)'),
+            'customRanking'         => array('desc(count)'),
+            'highlightPreTag'       => '<mark>',
+            'highlightPostTag'      => '</mark>',
+        );
+    }
+
+    /**
+     * Get settings for the users index.
+     *
+     * @param array $config
+     * @return array
+     */
+    public static function get_users_settings($config = array())
+    {
+        return array(
+            'searchableAttributes'  => array('display_name', 'user_login'),
+            'highlightPreTag'       => '<mark>',
+            'highlightPostTag'      => '</mark>',
+        );
+    }
+
+    /**
+     * Generate a deterministic hash of all settings to detect configuration changes.
+     *
+     * @param array  $config
+     * @param string $base_index_name
+     * @return string
+     */
+    public static function get_hash($config, $base_index_name = 'posts')
+    {
+        $composite = array(
+            'posts' => self::get_settings($config, $base_index_name),
+            'terms' => self::get_terms_settings($config),
+            'users' => self::get_users_settings($config),
+        );
+
         return md5(serialize($composite));
     }
 }

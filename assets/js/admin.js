@@ -6,9 +6,11 @@
 
     const SwiftSearchAdmin = {
         init: function () {
-            if (typeof swiftSearchConfig === 'undefined') {
+            const config = (typeof swiftSearchAlgoliaConfig !== 'undefined') ? swiftSearchAlgoliaConfig : ((typeof swiftSearchConfig !== 'undefined') ? swiftSearchConfig : undefined);
+            if (typeof config === 'undefined') {
                 return;
             }
+            window.swiftSearchConfig = config;
 
             try {
                 // Setup Ajax Nonce
@@ -172,12 +174,12 @@
         restoreState: function () {
             // Set Initial State
             // Populate Credentials
-            if (swiftSearchConfig.credentials && (swiftSearchConfig.credentials.host || swiftSearchConfig.credentials.api_key)) {
-                if (swiftSearchConfig.credentials.host) $('#ts-host').val(swiftSearchConfig.credentials.host);
-                if (swiftSearchConfig.credentials.port) $('#ts-port').val(swiftSearchConfig.credentials.port);
-                if (swiftSearchConfig.credentials.protocol) $('#ts-protocol').val(swiftSearchConfig.credentials.protocol);
-                if (swiftSearchConfig.credentials.api_key) $('#ts-api-key').val(swiftSearchConfig.credentials.api_key);
-                if (swiftSearchConfig.credentials.search_key) $('#ts-search-key').val(swiftSearchConfig.credentials.search_key);
+            if (swiftSearchConfig.credentials) {
+                const creds = swiftSearchConfig.credentials;
+                if (creds.app_id || creds.host) $('#ts-app-id').val(creds.app_id || creds.host);
+                if (creds.admin_api_key || creds.api_key) $('#ts-admin-api-key').val(creds.admin_api_key || creds.api_key);
+                if (creds.search_api_key || creds.search_key) $('#ts-search-api-key').val(creds.search_api_key || creds.search_key);
+                if (creds.index_prefix) $('#ts-index-prefix').val(creds.index_prefix);
             }
 
             // Set Initial UI State
@@ -224,6 +226,9 @@
                 }
             }
 
+            // Restore Algolia Badge Attribution Checkbox
+            $('#ss-show-algolia-badge').prop('checked', typeof swiftSearchConfig.show_algolia_badge !== 'undefined' ? !!swiftSearchConfig.show_algolia_badge : true);
+
             // Highlight checked cards on load
             $('.ss-checkbox-card input[type="checkbox"]').each(function() {
                 $(this).closest('.ss-checkbox-card').toggleClass('checked', $(this).is(':checked'));
@@ -244,12 +249,15 @@
                 // Render dynamic collections first
                 this.renderSynonymCollections();
 
-                // Synonyms
+                // Synonyms (One-Way and Multi-Way)
                 if (swiftSearchConfig.relevance.synonyms) {
                     let text = '';
                     swiftSearchConfig.relevance.synonyms.forEach(group => {
-                        const rootPart = group.root ? group.root + ', ' : '';
-                        text += rootPart + group.synonyms.join(', ') + '\n';
+                        if ((group.type === 'oneWaySynonym' || group.root) && group.root) {
+                            text += group.root + ' => ' + group.synonyms.join(', ') + '\n';
+                        } else {
+                            text += group.synonyms.join(', ') + '\n';
+                        }
                     });
                     this.$synonymsInput.val(text.trim());
                 }
@@ -483,12 +491,28 @@
             const synonyms = [];
 
             lines.forEach(line => {
-                const parts = line.split(',').map(s => s.trim()).filter(s => s.length > 0);
-                if (parts.length > 1) {
-                    // Send all as equivalent (multi-way) for best UX
-                    synonyms.push({
-                        synonyms: parts
-                    });
+                const trimmed = line.trim();
+                if (!trimmed) return;
+
+                if (trimmed.indexOf('=>') !== -1) {
+                    const arrowParts = trimmed.split('=>');
+                    const root = arrowParts[0].trim();
+                    const syns = (arrowParts[1] || '').split(',').map(s => s.trim()).filter(s => s.length > 0);
+                    if (root && syns.length > 0) {
+                        synonyms.push({
+                            root: root,
+                            type: 'oneWaySynonym',
+                            synonyms: syns
+                        });
+                    }
+                } else {
+                    const parts = trimmed.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                    if (parts.length > 1) {
+                        synonyms.push({
+                            type: 'synonym',
+                            synonyms: parts
+                        });
+                    }
                 }
             });
 
@@ -646,6 +670,7 @@
                         users: $('#ss-scope-users').is(':checked')
                     }
                 },
+                show_algolia_badge: $('#ss-show-algolia-badge').is(':checked'),
                 facets_config: facets
             };
 
@@ -1501,7 +1526,7 @@
                     <thead>
                         <tr>
                             <th style="width: 30%;">Meta Key</th>
-                            <th style="width: 30%;">Field Name (in Typesense)</th>
+                            <th style="width: 30%;">Field Name (in Algolia)</th>
                             <th style="width: 15%;">Type</th>
                             <th style="width: 15%;">Facet?</th>
                             <th style="width: 10%;"></th>
@@ -1677,7 +1702,7 @@
                             <input type="text" class="ss-facet-label" value="${displayLabel}" style="width: 100%;">
                         </td>
                         <td>
-                            <input type="text" class="ss-facet-target" value="${targetName}" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder="Typesense field name">
+                            <input type="text" class="ss-facet-target" value="${targetName}" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder="Algolia field name">
                         </td>
                         <td>
                             <select class="ss-facet-datatype" style="width: 100%;">

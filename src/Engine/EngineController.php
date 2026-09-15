@@ -1,6 +1,6 @@
 <?php
 
-namespace SwiftSearch\Engine;
+namespace SwiftSearchAlgolia\Engine;
 
 if (!defined('ABSPATH')) {
     exit;

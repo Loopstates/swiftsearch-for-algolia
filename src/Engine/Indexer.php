@@ -1,7 +1,7 @@
 <?php
-namespace SwiftSearch\Engine;
+namespace SwiftSearchAlgolia\Engine;
 
-use SwiftSearch\Client\Client;
+use SwiftSearchAlgolia\Client\Client;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -10,11 +10,10 @@ if (!defined('ABSPATH')) {
 /**
  * Class Indexer
  *
- * Handles indexing of content.
+ * Handles indexing of content to Algolia.
  */
 class Indexer
 {
-
     protected $client;
     protected $builder;
     protected $config_loader;
@@ -24,10 +23,10 @@ class Indexer
      */
     public function __construct()
     {
-        $this->client = new Client();
+        $this->client        = new Client();
         $this->config_loader = new ConfigLoader();
 
-        // Hook into WP lifecycle using Async handlers
+        // Hook into WP lifecycle
         add_action('save_post', array($this, 'handle_save_hook'), 10, 3);
         add_action('delete_post', array($this, 'handle_delete_hook'));
 
@@ -46,15 +45,25 @@ class Indexer
         add_action('woocommerce_reduce_order_stock', array($this, 'handle_wc_order_stock_hook'));
         add_action('transition_post_status', array($this, 'handle_status_transition'), 10, 3);
 
-        // Register the actual background process
-        add_action('swift_search_async_index_post', array($this, 'index_post'));
-        add_action('swift_search_async_delete_post', array($this, 'delete_post_from_index'));
+        // Register background processing hooks
+        add_action('swift_search_algolia_async_index_post', array($this, 'index_post'));
+        add_action('swift_search_algolia_async_delete_post', array($this, 'delete_post_from_index'));
 
-        add_action('swift_search_async_index_term', array($this, 'index_term'));
-        add_action('swift_search_async_delete_term', array($this, 'delete_term_from_index'));
+        add_action('swift_search_algolia_async_index_term', array($this, 'index_term'));
+        add_action('swift_search_algolia_async_delete_term', array($this, 'delete_term_from_index'));
 
-        add_action('swift_search_async_index_user', array($this, 'index_user'));
-        add_action('swift_search_async_batch_process', array($this, 'process_bulk_batch'), 10, 2);
+        add_action('swift_search_algolia_async_index_user', array($this, 'index_user'));
+        add_action('swift_search_algolia_async_batch_process', array($this, 'process_bulk_batch'), 10, 2);
+    }
+
+    /**
+     * Get base index name (default 'posts').
+     *
+     * @return string
+     */
+    public function get_base_index_name()
+    {
+        return 'posts';
     }
 
     /**
@@ -65,36 +74,39 @@ class Indexer
     {
         $config = $this->config_loader->get_config();
 
-        // 1. Calculate Totals
-        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : array('product');
+        // 1. Configure settings and replicas prior to first push
+        $this->create_collection();
+
+        // 2. Calculate Totals
+        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : array('product', 'post', 'page');
 
         $args = array(
-            'post_type' => $post_types,
-            'post_status' => 'publish',
-            'fields' => 'ids',
+            'post_type'      => $post_types,
+            'post_status'    => 'publish',
+            'fields'         => 'ids',
             'posts_per_page' => -1,
         );
 
         $query = new \WP_Query($args);
         $total = $query->found_posts;
 
-        // 2. Init Status
+        // 3. Initialize Status
         $status = array(
-            'active' => true,
-            'total' => $total,
-            'processed' => 0,
+            'active'          => true,
+            'total'           => $total,
+            'processed'       => 0,
             'last_sync_start' => time(),
-            'message' => 'Initializing...'
+            'message'         => __('Initializing Algolia sync...', 'swiftsearch-for-algolia'),
         );
-        update_option('swift_search_index_status', $status);
-        delete_option('swift_search_sync_errors'); // Clear old errors on new run
+        update_option('swift_search_algolia_index_status', $status);
+        delete_option('swift_search_algolia_sync_errors');
 
-        // 3. Schedule First Batch - ASYNC
+        // 4. Schedule First Batch
         $bg_process = new BackgroundProcess();
         $bg_process->dispatch(array(
-            'type' => 'batch_process',
+            'type'   => 'batch_process',
             'offset' => 0,
-            'limit' => 50
+            'limit'  => 50,
         ), true);
 
         return $total;
@@ -102,40 +114,43 @@ class Indexer
 
     /**
      * Recursive Worker: Process Batch.
+     *
+     * @param int $offset
+     * @param int $limit
      */
     public function process_bulk_batch($offset, $limit = 50)
     {
-        $config = $this->config_loader->get_config();
-        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : array('product');
+        $config     = $this->config_loader->get_config();
+        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : array('product', 'post', 'page');
 
         $args = array(
-            'post_type' => $post_types,
-            'post_status' => 'publish',
-            'fields' => 'ids',
+            'post_type'      => $post_types,
+            'post_status'    => 'publish',
+            'fields'         => 'ids',
             'posts_per_page' => $limit,
-            'offset' => $offset,
-            'orderby' => 'ID',
-            'order' => 'ASC',
+            'offset'         => $offset,
+            'orderby'        => 'ID',
+            'order'          => 'ASC',
         );
 
         $query = new \WP_Query($args);
-        $ids = $query->posts;
+        $ids   = $query->posts;
 
         if (empty($ids)) {
-            // DONE
-            update_option('swift_search_index_status', array(
-                'active' => false,
-                'total' => $query->found_posts,
-                'processed' => $offset, // Adjusted
-                'message' => 'Complete!',
-                'last_updated' => time(),
-                'last_sync_completed_at' => time()
+            // Indexing Completed
+            update_option('swift_search_algolia_index_status', array(
+                'active'                 => false,
+                'total'                  => $query->found_posts,
+                'processed'              => $offset,
+                'message'                => __('Sync Complete!', 'swiftsearch-for-algolia'),
+                'last_updated'           => time(),
+                'last_sync_completed_at' => time(),
             ));
             return;
         }
 
-        // PROCESS BATCH
-        $documents = array();
+        // Process documents in batch
+        $documents    = array();
         $batch_errors = array();
 
         foreach ($ids as $id) {
@@ -149,48 +164,43 @@ class Indexer
             }
         }
 
-        // BULK IMPORT
+        // Bulk import via Algolia save_objects
         if (!empty($documents)) {
-            $result = $this->client->import('posts', $documents);
+            $result = $this->client->save_objects($this->get_base_index_name(), $documents);
             if ($result === false) {
-                // Batch Level Error
                 $batch_errors[] = array('id' => 'BATCH_API', 'error' => $this->client->get_last_error());
-            } elseif (is_array($result) && isset($result['success']) && !$result['success']) {
-                // Check deep errors if import returns partial success
             }
         }
 
-        // LOG BATCH
+        // Log batch results
         $this->log_batch($offset, $batch_errors);
 
-        // UPDATE STATUS
-        $new_processed = $offset + count($ids);
-        $status = get_option('swift_search_index_status', array());
-        $status['processed'] = $new_processed;
+        // Update progress status
+        $new_processed          = $offset + count($ids);
+        $status                 = get_option('swift_search_algolia_index_status', array());
+        $status['processed']    = $new_processed;
         $status['last_updated'] = time();
-        $status['message'] = "Indexed {$new_processed} / {$status['total']}";
-        update_option('swift_search_index_status', $status);
+        $status['message']      = sprintf(__('Indexed %1$d / %2$d', 'swiftsearch-for-algolia'), $new_processed, $status['total'] ?? $new_processed);
+        update_option('swift_search_algolia_index_status', $status);
 
-        // SCHEDULE NEXT - ASYNC CHAIN
-        if ($new_processed < $status['total']) {
+        // Schedule next batch or finalize
+        if ($new_processed < ($status['total'] ?? 0)) {
             $bg_process = new BackgroundProcess();
             $bg_process->dispatch(array(
-                'type' => 'batch_process',
+                'type'   => 'batch_process',
                 'offset' => $new_processed,
-                'limit' => $limit
+                'limit'  => $limit,
             ));
         } else {
-            // DONE
-            update_option('swift_search_index_status', array(
-                'active' => false,
-                'total' => $status['total'],
-                'processed' => $status['total'],
-                'message' => 'Complete!',
-                'last_updated' => time(),
-                'last_sync_completed_at' => time()
+            update_option('swift_search_algolia_index_status', array(
+                'active'                 => false,
+                'total'                  => $status['total'] ?? $new_processed,
+                'processed'              => $status['total'] ?? $new_processed,
+                'message'                => __('Sync Complete!', 'swiftsearch-for-algolia'),
+                'last_updated'           => time(),
+                'last_sync_completed_at' => time(),
             ));
 
-            // Clean Old Logs
             $this->cleanup_logs();
         }
     }
@@ -198,22 +208,21 @@ class Indexer
     private function log_batch($offset, $errors)
     {
         global $wpdb;
-        $table = $wpdb->prefix . 'swift_search_batch_logs';
+        $table = $wpdb->prefix . 'swift_search_algolia_batch_logs';
 
-        $status = empty($errors) ? 'success' : 'failed';
-        $error_msg = empty($errors) ? null : 'Batch completed with ' . count($errors) . ' errors.';
-        $failed_ids = empty($errors) ? null : json_encode($errors);
+        $status     = empty($errors) ? 'success' : 'failed';
+        $error_msg  = empty($errors) ? null : sprintf(__('Batch completed with %d errors.', 'swiftsearch-for-algolia'), count($errors));
+        $failed_ids = empty($errors) ? null : wp_json_encode($errors);
 
-        // Insert
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $wpdb->insert(
             $table,
             array(
-                'batch_offset' => $offset,
-                'status' => $status,
+                'batch_offset'  => $offset,
+                'status'        => $status,
                 'error_message' => $error_msg,
-                'failed_ids' => $failed_ids,
-                'created_at' => current_time('mysql')
+                'failed_ids'    => $failed_ids,
+                'created_at'    => current_time('mysql'),
             ),
             array('%d', '%s', '%s', '%s', '%s')
         );
@@ -222,12 +231,9 @@ class Indexer
     private function cleanup_logs()
     {
         global $wpdb;
-        // Delete older than 7 days - Use explicit prefix to satisfy static analysis
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $wpdb->query("DELETE FROM {$wpdb->prefix}swift_search_batch_logs WHERE created_at < NOW() - INTERVAL 7 DAY");
+        $wpdb->query("DELETE FROM {$wpdb->prefix}swift_search_algolia_batch_logs WHERE created_at < NOW() - INTERVAL 7 DAY");
     }
-
-    // ... existing hooks ...
 
     /**
      * Hook: Schedule Indexing on Save.
@@ -241,9 +247,9 @@ class Indexer
         }
 
         if (function_exists('as_enqueue_async_action')) {
-            as_enqueue_async_action('swift_search_async_index_post', array('post_id' => $post_id));
+            as_enqueue_async_action('swift_search_algolia_async_index_post', array('post_id' => $post_id));
         } else {
-            wp_schedule_single_event(time(), 'swift_search_async_index_post', array($post_id));
+            wp_schedule_single_event(time(), 'swift_search_algolia_async_index_post', array($post_id));
         }
     }
 
@@ -255,9 +261,9 @@ class Indexer
     public function handle_delete_hook($post_id)
     {
         if (function_exists('as_enqueue_async_action')) {
-            as_enqueue_async_action('swift_search_async_delete_post', array('post_id' => $post_id));
+            as_enqueue_async_action('swift_search_algolia_async_delete_post', array('post_id' => $post_id));
         } else {
-            wp_schedule_single_event(time(), 'swift_search_async_delete_post', array($post_id));
+            wp_schedule_single_event(time(), 'swift_search_algolia_async_delete_post', array($post_id));
         }
     }
 
@@ -266,18 +272,18 @@ class Indexer
     public function handle_term_save_hook($term_id, $tt_id = null, $taxonomy = null)
     {
         if (function_exists('as_enqueue_async_action')) {
-            as_enqueue_async_action('swift_search_async_index_term', array('term_id' => $term_id));
+            as_enqueue_async_action('swift_search_algolia_async_index_term', array('term_id' => $term_id));
         } else {
-            wp_schedule_single_event(time(), 'swift_search_async_index_term', array($term_id));
+            wp_schedule_single_event(time(), 'swift_search_algolia_async_index_term', array($term_id));
         }
     }
 
     public function handle_term_delete_hook($term_id, $tt_id = null, $taxonomy = null)
     {
         if (function_exists('as_enqueue_async_action')) {
-            as_enqueue_async_action('swift_search_async_delete_term', array('term_id' => $term_id));
+            as_enqueue_async_action('swift_search_algolia_async_delete_term', array('term_id' => $term_id));
         } else {
-            wp_schedule_single_event(time(), 'swift_search_async_delete_term', array($term_id));
+            wp_schedule_single_event(time(), 'swift_search_algolia_async_delete_term', array($term_id));
         }
     }
 
@@ -285,20 +291,21 @@ class Indexer
     {
         $this->ensure_schema_safety();
         $term = get_term($term_id);
-        if (!$term)
+        if (!$term) {
             return;
+        }
 
-        $indexer = new TermIndexer($this->config_loader);
+        $indexer  = new TermIndexer($this->config_loader);
         $document = $indexer->build($term);
 
         if ($document) {
-            $this->client->request('/collections/terms/documents?action=upsert', 'POST', $document);
+            $this->client->save_objects('terms', array($document));
         }
     }
 
     public function delete_term_from_index($term_id)
     {
-        $this->client->request('/collections/terms/documents/' . $term_id, 'DELETE');
+        $this->client->delete_objects('terms', array('term_' . $term_id));
     }
 
     // --- Users ---
@@ -306,18 +313,18 @@ class Indexer
     public function handle_user_save_hook($user_id, $old_user_data = null)
     {
         if (function_exists('as_enqueue_async_action')) {
-            as_enqueue_async_action('swift_search_async_index_user', array('user_id' => $user_id));
+            as_enqueue_async_action('swift_search_algolia_async_index_user', array('user_id' => $user_id));
         } else {
-            wp_schedule_single_event(time(), 'swift_search_async_index_user', array($user_id));
+            wp_schedule_single_event(time(), 'swift_search_algolia_async_index_user', array($user_id));
         }
     }
 
     public function handle_user_delete_hook($user_id)
     {
         if (function_exists('as_enqueue_async_action')) {
-            as_enqueue_async_action('swift_search_async_delete_user', array('user_id' => $user_id));
+            as_enqueue_async_action('swift_search_algolia_async_delete_user', array('user_id' => $user_id));
         } else {
-            wp_schedule_single_event(time(), 'swift_search_async_delete_user', array($user_id));
+            wp_schedule_single_event(time(), 'swift_search_algolia_async_delete_user', array($user_id));
         }
     }
 
@@ -325,37 +332,29 @@ class Indexer
     {
         $this->ensure_schema_safety();
         $user = get_userdata($user_id);
-        if (!$user)
+        if (!$user) {
             return;
+        }
 
-        $indexer = new UserIndexer($this->config_loader);
+        $indexer  = new UserIndexer($this->config_loader);
         $document = $indexer->build($user);
 
-        // If returns false (e.g. subscriber), we should probably delete it if it existed?
-        // Or upsert only if valid. If user role changed Subscriber -> Author, upsert.
-        // If Author -> Subscriber, build returns false. Ideally we should Delete.
         if ($document) {
-            $this->client->request('/collections/users/documents?action=upsert', 'POST', $document);
+            $this->client->save_objects('users', array($document));
         } else {
-            // Cleanup: If they were downgraded to subscriber, remove them from index
             $this->delete_user_from_index($user_id);
         }
     }
 
     public function delete_user_from_index($user_id)
     {
-        $this->client->request('/collections/users/documents/' . $user_id, 'DELETE');
+        $this->client->delete_objects('users', array('user_' . $user_id));
     }
 
     /**
      * WORKER: Index a single post.
      *
-     * @param int $post_id
-     */
-    /**
-     * WORKER: Index a single post.
-     *
-     * @param int $post_id
+     * @param int  $post_id
      * @param bool $return_doc If true, returns document array instead of sending to API.
      * @return array|void
      */
@@ -364,16 +363,14 @@ class Indexer
         $this->ensure_schema_safety();
 
         $post = get_post($post_id);
-        if (!$post)
+        if (!$post) {
             return;
+        }
 
-        // 2. Build and Index
-        $this->builder = new DocumentBuilder($this->config_loader);
+        $this->builder = new DocumentBuilder();
+        $document      = $this->builder->build($post);
 
-        $document = $this->builder->build($post);
         if (!$document) {
-            // If Post -> Draft or Post Type Disabled, remove from index
-            // ONLY if strictly processing single item. If batch, we just skip adding it.
             if (!$return_doc) {
                 $this->delete_post_from_index($post_id);
             }
@@ -384,20 +381,18 @@ class Indexer
             return $document;
         }
 
-        $this->client->request('/collections/posts/documents?action=upsert', 'POST', $document);
+        $this->client->save_objects($this->get_base_index_name(), array($document));
     }
 
     private function ensure_schema_safety()
     {
-        // 1. Schema Safety Check
-        $config = $this->config_loader->get_config();
-        $current_hash = Schema::get_hash($config);
-        $stored_hash = get_option('swift_search_schema_hash');
+        $config       = $this->config_loader->get_config();
+        $base_index   = $this->get_base_index_name();
+        $current_hash = Schema::get_hash($config, $base_index);
+        $stored_hash  = get_option('swift_search_algolia_schema_hash');
 
         if ($stored_hash && $current_hash !== $stored_hash) {
-            update_option('swift_search_schema_mismatch', true);
-            // return; // Throw Exception? Or just let it fail/warn? 
-            // For now we continue but flag it. 
+            update_option('swift_search_algolia_schema_mismatch', true);
         }
     }
 
@@ -411,77 +406,89 @@ class Indexer
 
     public function delete_post_from_index($post_id)
     {
-        $this->client->request('/collections/posts/documents/' . $post_id, 'DELETE');
+        $this->client->delete_objects($this->get_base_index_name(), array((string) $post_id));
     }
 
     // --- Extra Hooks ---
 
     public function handle_wc_order_stock_hook($order)
     {
-        // When stock reduces, re-index items in order
-        if (!$order)
+        if (!$order) {
             return;
+        }
 
         $items = $order->get_items();
         foreach ($items as $item) {
             $product_id = $item->get_product_id();
             $this->handle_save_hook($product_id);
-            // Also variation if exists
-            $variation_id = $item->get_variation_id();
-            if ($variation_id) {
-                // Typically changes persist to parent or we index variation. 
-                // For now, re-index parent is usually enough if schema handles it.
-                // Or if main Product ID is indexed.
-            }
         }
     }
 
     public function handle_status_transition($new_status, $old_status, $post)
     {
-        if ($new_status === $old_status)
+        if ($new_status === $old_status) {
             return;
+        }
 
-        // If moved to trash/draft -> Delete
         if ($new_status === 'trash' || $new_status === 'draft' || $new_status === 'auto-draft') {
             $this->handle_delete_hook($post->ID);
-        }
-        // If moved to publish -> Index (only if not already caught by save_post, which usually fires too, but this is safe double-check)
-        elseif ($new_status === 'publish') {
+        } elseif ($new_status === 'publish') {
             $this->handle_save_hook($post->ID);
         }
     }
 
     /**
-     * Create Collection (Init).
+     * Configure Index Settings and Replicas for Algolia.
      */
     public function create_collection()
     {
-        $config = $this->config_loader->get_config();
-        $schema = Schema::get_schema($config);
-        $terms_schema = Schema::get_terms_schema($config);
-        $users_schema = Schema::get_users_schema($config);
+        $config     = $this->config_loader->get_config();
+        $base_index = $this->get_base_index_name();
 
-        // Calculate and store hash for safety
-        $hash = Schema::get_hash($config);
-        update_option('swift_search_schema_hash', $hash);
-        delete_option('swift_search_schema_mismatch'); // Clear any validation error
+        // 1. Calculate and store settings hash
+        $hash = Schema::get_hash($config, $base_index);
+        update_option('swift_search_algolia_schema_hash', $hash);
+        delete_option('swift_search_algolia_schema_mismatch');
 
-        // Create main collection
-        $this->client->request('/collections', 'POST', $schema);
+        // 2. Push primary posts settings
+        $posts_settings = Schema::get_settings($config, $base_index);
+        $this->client->set_settings($base_index, $posts_settings, true);
 
-        // Create auxiliary collections
-        $this->client->request('/collections', 'POST', $terms_schema);
-        $this->client->request('/collections', 'POST', $users_schema);
+        // 3. Configure replicas ranking
+        $sort_options = $config['sort_options'] ?? array('price_asc', 'price_desc', 'date_desc');
+        foreach ($sort_options as $sort_key) {
+            $replica_name     = Schema::get_replica_index_name($base_index, $sort_key);
+            $replica_settings = Schema::get_replica_settings($sort_key);
+            $this->client->set_settings($replica_name, $replica_settings);
+        }
+
+        // 4. Push terms and users settings
+        $terms_settings = Schema::get_terms_settings($config);
+        $this->client->set_settings('terms', $terms_settings);
+
+        $users_settings = Schema::get_users_settings($config);
+        $this->client->set_settings('users', $users_settings);
+
+        return true;
     }
 
     /**
-     * Delete Collection (Reset).
+     * Delete/Clear Collections.
      */
     public function delete_collection()
     {
-        $this->client->request('/collections/posts', 'DELETE');
-        $this->client->request('/collections/terms', 'DELETE');
-        $this->client->request('/collections/users', 'DELETE');
+        $base_index = $this->get_base_index_name();
+        $this->client->clear_objects($base_index);
+        $this->client->clear_objects('terms');
+        $this->client->clear_objects('users');
+
+        $config       = $this->config_loader->get_config();
+        $sort_options = $config['sort_options'] ?? array('price_asc', 'price_desc', 'date_desc');
+        foreach ($sort_options as $sort_key) {
+            $replica_name = Schema::get_replica_index_name($base_index, $sort_key);
+            $this->client->clear_objects($replica_name);
+        }
+
         return true;
     }
 }

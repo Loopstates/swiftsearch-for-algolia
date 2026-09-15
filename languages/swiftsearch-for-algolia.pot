@@ -1,0 +1,629 @@
+# Copyright (C) 2026 Loopstates
+# This file is distributed under the same license as the SwiftSearch for Algolia package.
+msgid ""
+msgstr ""
+"Project-Id-Version: SwiftSearch for Algolia 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/swiftsearch-for-algolia\n"
+"POT-Creation-Date: 2026-09-15 13:42+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2026-YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: SwiftSearch POT Generator\n"
+"X-Domain: swiftsearch-for-algolia\n"
+
+#: templates/admin/app.php:102
+msgid "Admin API Key"
+msgstr ""
+
+#: templates/admin/app.php:185
+msgid "Advanced Data & Custom Fields"
+msgstr ""
+
+#: templates/admin/app.php:67
+msgid "Algolia"
+msgstr ""
+
+#: src/Client/Client.php:133
+msgid "Algolia Application ID and Admin API Key are required."
+msgstr ""
+
+#: templates/admin/app.php:20
+msgid "Algolia Dashboard"
+msgstr ""
+
+#: src/Api/RestController.php:501
+msgid "Algolia indexing started."
+msgstr ""
+
+#: templates/admin/app.php:51
+msgid "Analytics"
+msgstr ""
+
+#: templates/admin/app.php:94
+msgid "Application ID"
+msgstr ""
+
+#: templates/admin/app.php:161
+msgid "Automatically replace the native WordPress search form with SwiftSearch."
+msgstr ""
+
+#: templates/admin/app.php:425
+msgid "Background color for result cards and modals."
+msgstr ""
+
+#: src/Engine/Indexer.php:214
+msgid "Batch completed with %d errors."
+msgstr ""
+
+#: templates/admin/app.php:430
+msgid "Border Radius (px)"
+msgstr ""
+
+#: templates/admin/app.php:423
+msgid "Card Background"
+msgstr ""
+
+#: templates/admin/app.php:582
+msgid "Check Connection & Stats"
+msgstr ""
+
+#: templates/admin/app.php:588
+msgid "Clear Algolia indices and re-initialize settings."
+msgstr ""
+
+#: templates/admin/app.php:558
+msgid "Clear Index"
+msgstr ""
+
+#: templates/admin/app.php:420
+msgid "Color for titles and body text."
+msgstr ""
+
+#: src/Api/RestController.php:375 src/Api/RestController.php:471
+msgid "Complete!"
+msgstr ""
+
+#: templates/admin/app.php:385
+msgid "Configure filters for your search results sidebar. Facets are dynamically registered into Algolia index settings."
+msgstr ""
+
+#: templates/admin/app.php:149
+msgid "Configure how SwiftSearch integrates with your theme."
+msgstr ""
+
+#: templates/admin/app.php:172
+msgid "Configure which content types (Posts, Pages, Products, Custom Types) should be indexed into Algolia."
+msgstr ""
+
+#: templates/admin/app.php:31
+msgid "Connect"
+msgstr ""
+
+#: templates/admin/app.php:87
+msgid "Connect to Algolia"
+msgstr ""
+
+#: src/Admin/AdminController.php:132
+msgid "Connected to Algolia Successfully!"
+msgstr ""
+
+#: src/Api/RestController.php:200
+msgid "Connected to Algolia successfully!"
+msgstr ""
+
+#: src/Admin/AdminController.php:131
+msgid "Connecting to Algolia..."
+msgstr ""
+
+#: src/Api/RestController.php:207
+msgid "Connection failed. Please check your Algolia credentials."
+msgstr ""
+
+#: src/Admin/AdminController.php:133
+msgid "Connection to Algolia Failed."
+msgstr ""
+
+#: templates/admin/app.php:35
+msgid "Content"
+msgstr ""
+
+#: templates/admin/app.php:215
+msgid "Controls attribute priority in Algolia searchableAttributes. Higher values prioritize post title matches over content."
+msgstr ""
+
+#: templates/admin/app.php:376
+msgid "Copy Shortcode"
+msgstr ""
+
+#: templates/admin/app.php:462 templates/admin/app.php:479
+msgid "Count"
+msgstr ""
+
+#: templates/admin/app.php:408
+msgid "Customize colors and border radiuses to match your theme perfectly."
+msgstr ""
+
+#: templates/admin/app.php:325
+msgid "Customize individual search bars. Unchecked items will use global defaults."
+msgstr ""
+
+#: templates/admin/app.php:613
+msgid "Danger Zone"
+msgstr ""
+
+#: templates/admin/app.php:369
+msgid "Dedicated Catalog Page"
+msgstr ""
+
+#: templates/admin/app.php:314
+msgid "Dedicated Catalog Page (Sticky Sidebar)"
+msgstr ""
+
+#: templates/admin/app.php:308
+msgid "Default number of items to return per search."
+msgstr ""
+
+#: templates/admin/app.php:614
+msgid "Destructive actions to reset the plugin configuration."
+msgstr ""
+
+#: src/Api/RestController.php:209
+msgid "Details: %s"
+msgstr ""
+
+#: templates/admin/app.php:69
+msgid "Disconnected"
+msgstr ""
+
+#: templates/admin/app.php:297
+msgid "Display \"Search by Algolia\" Badge"
+msgstr ""
+
+#: templates/admin/app.php:277
+msgid "Display WooCommerce product prices."
+msgstr ""
+
+#: templates/admin/app.php:268
+msgid "Display product or post images in results."
+msgstr ""
+
+#: templates/admin/app.php:289
+msgid "Display short descriptions below titles."
+msgstr ""
+
+#: templates/admin/app.php:17
+msgid "Documentation"
+msgstr ""
+
+#: templates/admin/app.php:256
+msgid "Enable Algolia fuzzy matching for spelling mistakes."
+msgstr ""
+
+#: templates/admin/app.php:222
+msgid "Enter one group per line. Use comma separation for two-way synonyms (e.g. jacket, coat). Use \"root => synonym1, synonym2\" for one-way synonyms (e.g. tablet => ipad)."
+msgstr ""
+
+#: templates/admin/app.php:88
+msgid "Enter your Algolia Application ID and API credentials. You can find these in your Algolia Dashboard under Settings > API Keys."
+msgstr ""
+
+#: templates/admin/app.php:238
+msgid "Experience Options"
+msgstr ""
+
+#: templates/admin/app.php:384
+msgid "Faceted Navigation (Sidebar)"
+msgstr ""
+
+#: templates/admin/app.php:623
+msgid "Factory Reset"
+msgstr ""
+
+#: templates/admin/app.php:207
+msgid "Fine-tune ranking weights and define synonyms pushed directly to Algolia."
+msgstr ""
+
+#: templates/admin/app.php:368
+msgid "Floating Search Overlay"
+msgstr ""
+
+#: templates/admin/app.php:313
+msgid "Floating Search Overlay (Modal)"
+msgstr ""
+
+#: templates/admin/app.php:639
+msgid "For custom integrations, enterprise solutions, or dedicated engineering support, contact"
+msgstr ""
+
+#: templates/admin/app.php:306
+msgid "Global Results Limit"
+msgstr ""
+
+#: templates/admin/app.php:432
+msgid "Global roundness for cards, inputs, and buttons."
+msgstr ""
+
+#: src/Api/RestController.php:545
+msgid "Idle"
+msgstr ""
+
+#: templates/admin/app.php:556
+msgid "Index All Content"
+msgstr ""
+
+#: templates/admin/app.php:128
+msgid "Index Prefix (Optional)"
+msgstr ""
+
+#: templates/admin/app.php:538 templates/admin/app.php:550
+msgid "Index Synchronization"
+msgstr ""
+
+#: src/Engine/Indexer.php:183
+msgid "Indexed %1$d / %2$d"
+msgstr ""
+
+#: src/Api/RestController.php:462
+msgid "Indexing %1$s (page %2$d of %3$d)..."
+msgstr ""
+
+#: templates/admin/app.php:367
+msgid "Inherit Global Layout"
+msgstr ""
+
+#: src/Engine/Indexer.php:99
+msgid "Initializing Algolia sync..."
+msgstr ""
+
+#: templates/admin/app.php:246
+msgid "Instant Search"
+msgstr ""
+
+#: templates/admin/app.php:463
+msgid "Last Searched"
+msgstr ""
+
+#: templates/admin/app.php:365
+msgid "Layout Override"
+msgstr ""
+
+#: templates/admin/app.php:311
+msgid "Layout Setting"
+msgstr ""
+
+#: templates/admin/app.php:468 templates/admin/app.php:484
+msgid "Loading..."
+msgstr ""
+
+#: templates/admin/app.php:446
+msgid "Local Search Analytics"
+msgstr ""
+
+#: templates/admin/app.php:418
+msgid "Main Text Color"
+msgstr ""
+
+#: templates/admin/app.php:186
+msgid "Map custom meta fields to Algolia records (e.g. Price, SKU, Brand, ACF)."
+msgstr ""
+
+#: src/Api/RestController.php:164
+msgid "Missing Algolia Application ID or Admin API Key."
+msgstr ""
+
+#: src/Api/RestController.php:909
+msgid "No Admin API Key found."
+msgstr ""
+
+#: templates/admin/app.php:604
+msgid "No errors recorded."
+msgstr ""
+
+#: templates/admin/app.php:520
+msgid "No pinned items"
+msgstr ""
+
+#: templates/admin/app.php:131
+msgid "Optional prefix prepended to all index names (e.g. wp_posts). Default is empty."
+msgstr ""
+
+#: templates/admin/app.php:159
+msgid "Override Default Search"
+msgstr ""
+
+#: templates/admin/app.php:334
+msgid "Override Results Limit"
+msgstr ""
+
+#: templates/admin/app.php:55
+msgid "Pinning"
+msgstr ""
+
+#: templates/admin/app.php:330
+msgid "Placeholder Text"
+msgstr ""
+
+#: src/Api/RestController.php:466
+msgid "Posts complete. Moving to Terms..."
+msgstr ""
+
+#: templates/admin/app.php:413
+msgid "Primary Accent Color"
+msgstr ""
+
+#: templates/admin/app.php:547
+msgid "Progress"
+msgstr ""
+
+#: templates/admin/app.php:500
+msgid "Promote specific products or posts to the top of search results."
+msgstr ""
+
+#: templates/admin/app.php:123
+msgid "Public search-only key loaded by browser visitors to query Algolia indices securely."
+msgstr ""
+
+#: templates/admin/app.php:461 templates/admin/app.php:478
+msgid "Query"
+msgstr ""
+
+#: templates/admin/app.php:599
+msgid "Recent errors and status messages."
+msgstr ""
+
+#: templates/admin/app.php:572
+msgid "Recommended for large catalogs or hosting environments with strict timeouts (e.g. WP Engine, Kinsta)."
+msgstr ""
+
+#: templates/admin/app.php:72
+msgid "Records"
+msgstr ""
+
+#: templates/admin/app.php:39
+msgid "Relevance"
+msgstr ""
+
+#: templates/admin/app.php:206
+msgid "Relevance & Synonyms"
+msgstr ""
+
+#: templates/admin/app.php:298
+msgid "Required by Algolia Terms of Service on free/Build tier plans."
+msgstr ""
+
+#: templates/admin/app.php:619
+msgid "Reset Plugin to Factory Defaults"
+msgstr ""
+
+#: templates/admin/app.php:587
+msgid "Reset Search Index"
+msgstr ""
+
+#: templates/admin/app.php:577
+msgid "Run Bulk Indexing"
+msgstr ""
+
+#: templates/admin/app.php:140
+msgid "Save & Test Connection"
+msgstr ""
+
+#: templates/admin/app.php:198
+msgid "Save Content Settings"
+msgstr ""
+
+#: templates/admin/app.php:530
+msgid "Save Pinned Items"
+msgstr ""
+
+#: templates/admin/app.php:229
+msgid "Save Relevance Settings"
+msgstr ""
+
+#: templates/admin/app.php:399
+msgid "Save Search UI Settings"
+msgstr ""
+
+#: templates/admin/app.php:438
+msgid "Save Styling Settings"
+msgstr ""
+
+#: templates/admin/app.php:148
+msgid "Search Behavior"
+msgstr ""
+
+#: templates/admin/app.php:43
+msgid "Search UI"
+msgstr ""
+
+#: templates/admin/app.php:521
+msgid "Search above to pin products to the top of search results."
+msgstr ""
+
+#: templates/admin/app.php:247
+msgid "Search as you type with debounced fast queries."
+msgstr ""
+
+#: templates/admin/app.php:115
+msgid "Search-Only API Key"
+msgstr ""
+
+#: src/Frontend/SearchController.php:169
+msgid "Search..."
+msgstr ""
+
+#: templates/admin/app.php:171
+msgid "Searchable Content"
+msgstr ""
+
+#: src/Admin/AdminController.php:135
+msgid "Security Notice: Keep your Admin API Key confidential. Only your Search-Only API Key is exposed to the frontend browser."
+msgstr ""
+
+#: src/Core/Plugin.php:120
+msgid "Security Warning:"
+msgstr ""
+
+#: templates/admin/app.php:507
+msgid "Select Item to Pin"
+msgstr ""
+
+#: templates/admin/app.php:447
+msgid "Self-hosted search metrics tracking query volume, top searches, and zero-result queries."
+msgstr ""
+
+#: templates/admin/app.php:324
+msgid "Shortcode Generator"
+msgstr ""
+
+#: templates/admin/app.php:360
+msgid "Show Excerpt"
+msgstr ""
+
+#: templates/admin/app.php:288
+msgid "Show Excerpts"
+msgstr ""
+
+#: templates/admin/app.php:352
+msgid "Show Price"
+msgstr ""
+
+#: templates/admin/app.php:276
+msgid "Show Prices"
+msgstr ""
+
+#: templates/admin/app.php:344
+msgid "Show Thumbnail"
+msgstr ""
+
+#: templates/admin/app.php:267
+msgid "Show Thumbnails"
+msgstr ""
+
+#: templates/admin/app.php:407
+msgid "Styling & Customization"
+msgstr ""
+
+#: templates/admin/app.php:47
+msgid "Styling & UI"
+msgstr ""
+
+#: src/Admin/AdminController.php:33 src/Admin/AdminController.php:34
+msgid "SwiftSearch"
+msgstr ""
+
+#: src/Core/Plugin.php:120
+msgid "SwiftSearch settings appear to have been modified externally. Please verify your Algolia credentials."
+msgstr ""
+
+#: templates/admin/app.php:59
+msgid "Sync"
+msgstr ""
+
+#: src/Engine/Indexer.php:145 src/Engine/Indexer.php:199
+msgid "Sync Complete!"
+msgstr ""
+
+#: templates/admin/app.php:598
+msgid "Sync Logs"
+msgstr ""
+
+#: templates/admin/app.php:578
+msgid "Synchronize content in chunks without web server timeouts."
+msgstr ""
+
+#: templates/admin/app.php:552
+msgid "Synchronize your WordPress content with Algolia. This process pushes all selected post types and taxonomies to your Algolia index. Run this initial sync or whenever doing major catalog updates."
+msgstr ""
+
+#: templates/admin/app.php:219
+msgid "Synonyms (One-Way & Multi-Way)"
+msgstr ""
+
+#: templates/admin/app.php:65
+msgid "System Status"
+msgstr ""
+
+#: src/Api/RestController.php:468
+msgid "Terms complete. Moving to Users..."
+msgstr ""
+
+#: templates/admin/app.php:620
+msgid "This will permanently delete all local settings, custom fields mapping, synonyms, facets, design styling, and Algolia credentials."
+msgstr ""
+
+#: templates/admin/app.php:212
+msgid "Title Matching Priority:"
+msgstr ""
+
+#: templates/admin/app.php:105 templates/admin/app.php:118
+msgid "Toggle Visibility"
+msgstr ""
+
+#: templates/admin/app.php:457
+msgid "Top Searches"
+msgstr ""
+
+#: templates/admin/app.php:509
+msgid "Type a product or post name to pin..."
+msgstr ""
+
+#: templates/admin/app.php:255
+msgid "Typo Tolerance"
+msgstr ""
+
+#: templates/admin/app.php:415
+msgid "Used for buttons, active facets, and highlights."
+msgstr ""
+
+#: templates/admin/app.php:110
+msgid "Used securely on your server for batch indexing and index configuration. Never shared with frontend visitors."
+msgstr ""
+
+#: templates/admin/app.php:583
+msgid "Verify connectivity to Algolia and view record counts."
+msgstr ""
+
+#: templates/admin/app.php:499
+msgid "Visual Merchandising & Pinned Results"
+msgstr ""
+
+#: templates/admin/app.php:571
+msgid "WP-CLI Terminal Commands"
+msgstr ""
+
+#: templates/admin/app.php:97
+msgid "Your unique Algolia Application identifier."
+msgstr ""
+
+#: templates/admin/app.php:474
+msgid "Zero Result Queries"
+msgstr ""
+
+#: src/Admin/AdminController.php:134
+msgid "⚠️ Settings Out of Sync: Please perform a Full Re-Index now to update your searchable attributes and facets in Algolia."
+msgstr ""
+
+#. Plugin Name of the plugin
+msgid "SwiftSearch for Algolia"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://docs.loopstates.com/swiftsearch-for-algolia/"
+msgstr ""
+
+#. Description of the plugin
+msgid "Lightning-fast, intelligent search for WordPress & WooCommerce powered by Algolia. Features instant modal search, visual facets builder, field weighting, synonyms, visual merchandising & pinning, and local search analytics."
+msgstr ""
+
+#. Author of the plugin
+msgid "Loopstates"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://loopstates.com"
+msgstr ""
