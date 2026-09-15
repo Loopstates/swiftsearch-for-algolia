@@ -1,0 +1,1773 @@
+
+
+/* Version: 1.2.2 */
+(function ($) {
+    'use strict';
+
+    const SwiftSearchAdmin = {
+        init: function () {
+            if (typeof swiftSearchConfig === 'undefined') {
+                return;
+            }
+
+            try {
+                // Setup Ajax Nonce
+                $.ajaxSetup({
+                    headers: {
+                        'X-WP-Nonce': swiftSearchConfig.nonce
+                    }
+                });
+
+                this.cacheDOM();
+                this.bindEvents();
+                this.checkStatus();
+                this.checkPlan();
+                this.restoreState();
+
+                this.renderFacetsConfig();
+
+                // Initial Status Check
+                this.pollStatus(true);
+            } catch (e) {
+                alert("SwiftSearch Error: " + e.message);
+            }
+        },
+
+        cacheDOM: function () {
+            this.$navItems = $('.ss-nav-item');
+            this.$views = $('.ss-step-view');
+            this.$connectForm = $('#ss-connect-form');
+            this.$connectBtn = $('#ss-connect-btn');
+            this.$statusEl = $('#ss-connection-status');
+            this.$docCountEl = $('#ss-doc-count');
+
+            // Sync
+            this.$syncBtn = $('#ss-sync-btn');
+            this.$resetBtn = $('#ss-reset-btn');
+            this.$factoryResetBtn = $('#ss-factory-reset-btn');
+            this.$progressCircle = $('.progress-circle');
+            this.$syncStatusText = $('#ss-sync-msg');
+            this.$logContainer = $('#ss-sync-log-container');
+
+            // Save Btns
+            this.$saveContentBtn = $('#ss-save-content');
+            this.$saveRelevanceBtn = $('#ss-save-relevance');
+            this.$saveSearchUIBtn = $('#ss-save-search-ui');
+            this.$savePinningBtn = $('#ss-save-pinning');
+            this.$saveStylingBtn = $('#ss-save-styling');
+
+            // Styling Inputs
+            this.$ssPrimaryColor = $('#ss-primary-color');
+            this.$ssTextColor = $('#ss-text-color');
+            this.$ssCardBg = $('#ss-card-bg');
+            this.$ssBorderRadius = $('#ss-border-radius');
+
+            // Pro Gates
+            this.$proGates = $('.ss-pro-gate');
+
+            // Override
+            this.$overrideToggle = $('#ss-override-default');
+
+            // Shortcode Builder (Overrides)
+            this.$scPlaceholder = $('#sc-placeholder');
+            this.$scLimit = $('#sc-limit');
+            this.$scShowThumb = $('#sc-show-thumb');
+            this.$scShowPrice = $('#sc-show-price');
+            this.$scShowExcerpt = $('#sc-show-excerpt');
+            this.$scLayout = $('#sc-layout');
+            this.$scPreview = $('#sc-preview');
+            this.$scCopyBtn = $('#ss-copy-sc');
+            this.$scPostTypeSelector = $('.sc-post-type-selector');
+
+            // Experience Options (Global Defaults)
+            this.$ssInstantSearch = $('#ss-instant-search');
+            this.$ssTypoTolerance = $('#ss-typo-tolerance');
+            this.$ssGlobalShowThumb = $('#ss-global-show-thumb');
+            this.$ssGlobalShowPrice = $('#ss-global-show-price');
+            this.$ssGlobalShowExcerpt = $('#ss-global-show-excerpt');
+            this.$ssGlobalLimit = $('#ss-global-limit');
+            this.$ssGlobalLayout = $('#ss-global-layout');
+
+            // Relevance
+            this.$relevanceRange = $('#ss-relevance-range');
+            this.$synonymsInput = $('#ss-synonyms-list');
+            this.$synonymColsContainer = $('#ss-synonym-collections-container');
+
+            // Post Types
+            // Post Types
+            this.$postTypeInputs = $('input[name="post_types[]"]');
+
+            // Pinning
+            this.$pinningSearch = $('#ss-pinning-search');
+            this.$pinningResults = $('#ss-pinning-results');
+            this.$pinnedListContainer = $('#ss-pinned-list-container');
+            this.$pinningEmpty = $('#ss-pinning-empty');
+            this.pinnedItems = [];
+            this.searchTimeout = null;
+
+            // API Toggles
+            this.$apiKeyToggles = $('.ss-toggle-api-key');
+        },
+
+        bindEvents: function () {
+            // Tab Navigation
+            this.$navItems.on('click', this.handleNavClick.bind(this));
+
+            // Connect Action
+            this.$connectBtn.on('click', this.handleConnect.bind(this));
+
+            // Sync Actions
+            this.$syncBtn.on('click', this.startSync.bind(this));
+            this.$resetBtn.on('click', this.resetIndex.bind(this));
+            this.$factoryResetBtn.on('click', this.factoryReset.bind(this));
+
+            // Override Toggle (Remove auto-save)
+            // this.$overrideToggle.on('change', this.handleOverrideChange.bind(this));
+
+            // Shortcode Actions
+            this.$scPlaceholder.on('input', this.updateShortcodePreview.bind(this));
+            this.$scLimit.on('input', this.updateShortcodePreview.bind(this));
+            this.$scShowThumb.on('change', this.updateShortcodePreview.bind(this));
+            this.$scShowPrice.on('change', this.updateShortcodePreview.bind(this));
+            this.$scShowExcerpt.on('change', this.updateShortcodePreview.bind(this));
+            this.$scLayout.on('change', this.updateShortcodePreview.bind(this));
+            this.$scCopyBtn.on('click', this.copyShortcode.bind(this));
+
+            // Experience Options (Remove auto-save)
+            // this.$ssTypoTolerance.on('change', this.handleExperienceChange.bind(this));
+            // this.$ssSortEnabled.on('change', this.handleExperienceChange.bind(this));
+            // this.$ssMobileBtn.on('change', this.handleExperienceChange.bind(this));
+
+            // Save Actions
+            this.$saveContentBtn.on('click', this.saveContentSettings.bind(this));
+            this.$saveRelevanceBtn.on('click', this.handleRelevanceSave.bind(this));
+            this.$saveSearchUIBtn.on('click', this.handleSearchUISave.bind(this));
+            this.$savePinningBtn.on('click', this.savePinnedItems.bind(this));
+            this.$saveStylingBtn.on('click', this.saveStylingSettings.bind(this));
+            $('#ss-test-synonyms').on('click', this.handleDiagnose.bind(this));
+
+            // API Toggle
+            this.$apiKeyToggles.on('click', this.toggleApiKeyVisibility.bind(this));
+
+            // Pinning
+            this.$pinningSearch.on('input', this.handlePinningSearch.bind(this));
+            this.$pinningResults.on('click', '.ss-autocomplete-item', this.addPinnedItem.bind(this));
+            this.$pinnedListContainer.on('click', '.remove-pin', this.removePinnedItem.bind(this));
+            // Close autocomplete on click outside
+            $(document).on('click', (e) => {
+                if (!$(e.target).closest('.ss-pinning-ui').length) {
+                    this.$pinningResults.hide();
+                }
+            });
+
+            // Toggle checked class on checkbox cards change
+            $(document).on('change', '.ss-checkbox-card input[type="checkbox"]', function () {
+                $(this).closest('.ss-checkbox-card').toggleClass('checked', $(this).is(':checked'));
+            });
+        },
+
+
+
+        // Set Initial State
+        restoreState: function () {
+            // Set Initial State
+            // Populate Credentials
+            if (swiftSearchConfig.credentials && (swiftSearchConfig.credentials.host || swiftSearchConfig.credentials.api_key)) {
+                if (swiftSearchConfig.credentials.host) $('#ts-host').val(swiftSearchConfig.credentials.host);
+                if (swiftSearchConfig.credentials.port) $('#ts-port').val(swiftSearchConfig.credentials.port);
+                if (swiftSearchConfig.credentials.protocol) $('#ts-protocol').val(swiftSearchConfig.credentials.protocol);
+                if (swiftSearchConfig.credentials.api_key) $('#ts-api-key').val(swiftSearchConfig.credentials.api_key);
+                if (swiftSearchConfig.credentials.search_key) $('#ts-search-key').val(swiftSearchConfig.credentials.search_key);
+            }
+
+            // Set Initial UI State
+            this.renderConnectionState(this.$statusEl.hasClass('connected'));
+
+            // Render Content Settings
+            this.renderContentSettings();
+
+            // Render Custom Fields (Pro)
+            this.renderCustomFields();
+
+            // Set Experience State
+            if (swiftSearchConfig.status && swiftSearchConfig.status.overrideDefault) {
+                this.$overrideToggle.prop('checked', true);
+            }
+
+            if (swiftSearchConfig.experience) {
+                const exp = swiftSearchConfig.experience;
+                this.$ssTypoTolerance.prop('checked', !!exp.typo_tolerance);
+                this.$ssInstantSearch.prop('checked', typeof exp.instant_search !== 'undefined' ? !!exp.instant_search : true);
+                
+                // UI Globals
+                this.$ssGlobalShowThumb.prop('checked', typeof exp.show_thumbnail !== 'undefined' ? !!exp.show_thumbnail : true);
+                this.$ssGlobalShowPrice.prop('checked', typeof exp.show_price !== 'undefined' ? !!exp.show_price : true);
+                this.$ssGlobalShowExcerpt.prop('checked', !!exp.show_excerpt);
+                this.$ssGlobalLimit.val(exp.limit || 10);
+                this.$ssGlobalLayout.val(exp.layout || (exp.browse_mode ? 'catalog' : 'overlay'));
+
+                // Set Shortcode Defaults to match Global initially for better UX
+                this.$scShowThumb.prop('checked', this.$ssGlobalShowThumb.is(':checked'));
+                this.$scShowPrice.prop('checked', this.$ssGlobalShowPrice.is(':checked'));
+                this.$scShowExcerpt.prop('checked', this.$ssGlobalShowExcerpt.is(':checked'));
+                this.$scLayout.val('default');
+
+                if (exp.search_scope) {
+                    $('#ss-scope-terms').prop('checked', !!exp.search_scope.terms);
+                    $('#ss-scope-users').prop('checked', !!exp.search_scope.users);
+                }
+
+                if (exp.post_types && Array.isArray(exp.post_types)) {
+                    exp.post_types.forEach(pt => {
+                        $(`.ss-global-post-type-selector[value="${pt}"]`).prop('checked', true);
+                    });
+                }
+            }
+
+            // Highlight checked cards on load
+            $('.ss-checkbox-card input[type="checkbox"]').each(function() {
+                $(this).closest('.ss-checkbox-card').toggleClass('checked', $(this).is(':checked'));
+            });
+
+            // Set Relevance State
+            if (swiftSearchConfig.relevance) {
+                // Post Title Weight
+                if (swiftSearchConfig.relevance.weights && typeof swiftSearchConfig.relevance.weights.post_title !== 'undefined' && !isNaN(swiftSearchConfig.relevance.weights.post_title)) {
+                    const wVal = Math.round(parseFloat(swiftSearchConfig.relevance.weights.post_title) * 10);
+                    this.$relevanceRange.val(wVal);
+                    $('#ss-relevance-val').text(wVal);
+                } else {
+                    this.$relevanceRange.val(50);
+                    $('#ss-relevance-val').text(50);
+                }
+
+                // Render dynamic collections first
+                this.renderSynonymCollections();
+
+                // Synonyms
+                if (swiftSearchConfig.relevance.synonyms) {
+                    let text = '';
+                    swiftSearchConfig.relevance.synonyms.forEach(group => {
+                        const rootPart = group.root ? group.root + ', ' : '';
+                        text += rootPart + group.synonyms.join(', ') + '\n';
+                    });
+                    this.$synonymsInput.val(text.trim());
+                }
+            }
+
+            // Trigger initial shortcode preview
+            this.updateShortcodePreview();
+
+            // Late binding for dynamic elements or shortcode specific
+            $('.sc-post-type-selector').on('change', this.updateShortcodePreview.bind(this));
+
+            // Set Styling State
+            if (swiftSearchConfig.styling) {
+                this.$ssPrimaryColor.val(swiftSearchConfig.styling.primary_color || '#ff0055');
+                this.$ssTextColor.val(swiftSearchConfig.styling.text_color || '#1f2937');
+                this.$ssCardBg.val(swiftSearchConfig.styling.card_bg || '#ffffff');
+                this.$ssBorderRadius.val(swiftSearchConfig.styling.border_radius || 16);
+            }
+
+            // Resume Sync State / Show History
+            this.pollStatus(true);
+        },
+
+        renderContentSettings: function () {
+            const container = $('#ss-content-settings-container');
+            if (!container.length) return;
+
+            const postTypes = swiftSearchConfig.available_post_types || [];
+            const savedPostTypes = swiftSearchConfig.indexed_post_types || [];
+
+            const taxonomies = swiftSearchConfig.available_taxonomies || [];
+            const savedTaxonomies = swiftSearchConfig.indexed_taxonomies || [];
+
+            const savedUsers = swiftSearchConfig.indexed_users || false;
+
+
+            let html = '';
+
+            // Section: Post Types
+            html += '<h4 style="margin: 0 0 10px 0; font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Post Types</h4>';
+            html += '<div class="ss-card-grid">';
+            if (postTypes.length > 0) {
+                postTypes.forEach(type => {
+                    const isChecked = savedPostTypes.includes(type.name) ? 'checked' : '';
+                    html += `<label class="ss-checkbox-card ${isChecked ? 'checked' : ''}">
+                        <input type="checkbox" name="post_types[]" value="${type.name}" ${isChecked} class="ss-reindex-trigger">
+                        <div class="info">
+                            <span class="title">${type.label || type.name}</span>
+                            <span class="meta">${type.description || type.name}</span>
+                        </div>
+                    </label>`;
+                });
+            } else {
+                html += '<p>No public post types found.</p>';
+            }
+            html += '</div>';
+
+            // Add Event Listener for re-index trigger
+            container.off('change', '.ss-reindex-trigger').on('change', '.ss-reindex-trigger', () => {
+                this.showReindexNotice();
+            });
+
+            // Section: Taxonomies
+            html += '<h4 style="margin: 0 0 10px 0; font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Taxonomies</h4>';
+            html += '<div class="ss-card-grid">';
+            if (taxonomies.length > 0) {
+                taxonomies.forEach(tax => {
+                    const isChecked = savedTaxonomies.includes(tax.name) ? 'checked' : '';
+                    html += `<label class="ss-checkbox-card ${isChecked ? 'checked' : ''}">
+                        <input type="checkbox" name="taxonomies[]" value="${tax.name}" ${isChecked} class="ss-reindex-trigger">
+                        <div class="info">
+                            <span class="title">${tax.label || tax.name}</span>
+                            <span class="meta">${tax.description || tax.name}</span>
+                        </div>
+                    </label>`;
+                });
+            } else {
+                html += '<p>No public taxonomies found.</p>';
+            }
+            html += '</div>';
+
+            // Section: Users
+            html += '<h4 style="margin: 0 0 10px 0; font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Users</h4>';
+            html += '<div class="ss-card-grid">';
+            const userChecked = savedUsers ? 'checked' : '';
+            html += `<label class="ss-checkbox-card ${userChecked ? 'checked' : ''}">
+                <input type="checkbox" id="ss-index-users" name="index_users" ${userChecked} class="ss-reindex-trigger">
+                <div class="info">
+                    <span class="title">Authors & Users</span>
+                    <span class="meta">Index public authors for "By Author" searches.</span>
+                </div>
+            </label>`;
+            html += '</div>';
+
+            container.html(html);
+        },
+
+        renderSynonymCollections: function () {
+            const container = this.$synonymColsContainer;
+            if (!container || !container.length) return;
+
+            const collections = swiftSearchConfig.available_collections || [];
+            const savedCols = (swiftSearchConfig.relevance && swiftSearchConfig.relevance.synonym_collections) ? swiftSearchConfig.relevance.synonym_collections : ['posts'];
+
+            if (collections.length === 0) {
+                container.html('<p class="ss-hint" style="color: #ef4444;">No active collections found. Please index some content first.</p>');
+                return;
+            }
+
+            let html = '<div class="ss-checkbox-list" style="display: flex; flex-wrap: wrap; gap: 15px;">';
+            collections.forEach(col => {
+                const isChecked = savedCols.indexOf(col) !== -1 ? 'checked' : '';
+                html += `
+                    <label class="ss-checkbox-inline">
+                        <input type="checkbox" class="ss-synonym-col" value="${this.escapeHtml(col)}" ${isChecked}>
+                        ${this.escapeHtml(col)}
+                    </label>
+                `;
+            });
+            html += '</div>';
+
+            container.html(html);
+        },
+
+
+        /**
+         * Escape HTML to prevent XSS.
+         */
+        escapeHtml: function (text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.toString().replace(/[&<>"']/g, function (m) { return map[m]; });
+        },
+
+        request: function (method, endpoint, data = {}) {
+            return $.ajax({
+                url: swiftSearchConfig.apiUrl + endpoint,
+                method: method,
+                data: data,
+                headers: {
+                    'X-WP-Nonce': swiftSearchConfig.nonce
+                }
+            });
+        },
+
+        saveContentSettings: function (e) {
+            e.preventDefault();
+            const $btn = this.$saveContentBtn;
+            const originalText = $btn.text();
+            $btn.prop('disabled', true).text('Saving...');
+
+            const postTypes = [];
+            $('input[name="post_types[]"]:checked').each(function () {
+                postTypes.push($(this).val());
+            });
+
+            const taxonomies = [];
+            $('input[name="taxonomies[]"]:checked').each(function () {
+                taxonomies.push($(this).val());
+            });
+
+            const indexUsers = $('#ss-index-users').is(':checked');
+
+            // Collect Custom Fields (Pro)
+            const customFields = {};
+            $('#ss-custom-fields-container tbody').each(function () {
+                const pt = $(this).data('pt');
+                const fields = [];
+                $(this).find('tr').each(function () {
+                    const row = $(this);
+                    const key = row.find('input[name*="[key]"]').val();
+                    const name = row.find('input[name*="[name]"]').val();
+                    const type = row.find('select[name*="[type]"]').val();
+                    const facet = row.find('input[name*="[facet]"]').is(':checked');
+
+                    if (key && name) {
+                        fields.push({ key: key.trim(), name: name.trim(), type: type, facet: facet });
+                    }
+                });
+                if (fields.length > 0) {
+                    customFields[pt] = fields;
+                }
+            });
+
+            const payload = {
+                section: 'content',
+                post_types: postTypes,
+                taxonomies: taxonomies,
+                index_users: indexUsers,
+                custom_fields: customFields,
+                override_default: this.$overrideToggle.is(':checked')
+            };
+
+            this.request('POST', '/settings', payload).done(function (response) {
+                if (response.success) {
+                    alert('Content Settings Saved!');
+                } else {
+                    alert('Failed to save settings: ' + (response.message || 'Unknown error'));
+                }
+            }).fail(function (xhr) {
+                const response = xhr.responseJSON;
+                alert('Failed to save settings: ' + (response && response.message ? response.message : 'Unknown network error'));
+            }).always(function () {
+                $btn.prop('disabled', false).text(originalText);
+            });
+        },
+
+        handleRelevanceSave: function (e) {
+            e.preventDefault();
+            const $btn = this.$saveRelevanceBtn;
+            const originalText = $btn.text();
+            $btn.prop('disabled', true).text('Saving...');
+
+            const weightVal = this.$relevanceRange.val();
+            const weight = Math.max(1, Math.round(weightVal / 10)); // Scale 100 -> 10
+
+            const synonymCols = [];
+            $('.ss-synonym-col').each(function () {
+                if ($(this).is(':checked')) {
+                    synonymCols.push($(this).val());
+                }
+            });
+
+            const lines = this.$synonymsInput.val().split('\n');
+            const synonyms = [];
+
+            lines.forEach(line => {
+                const parts = line.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                if (parts.length > 1) {
+                    // Send all as equivalent (multi-way) for best UX
+                    synonyms.push({
+                        synonyms: parts
+                    });
+                }
+            });
+
+            const payload = {
+                section: 'experience',
+                relevance_settings: {
+                    weights: {
+                        post_title: weight,
+                        post_content: 2,
+                        sku: 4,
+                        category: 2,
+                        tag: 2
+                    },
+                    synonyms: synonyms,
+                    synonym_collections: synonymCols
+                }
+            };
+
+            this.request('POST', '/settings', payload).done(function (response) {
+                if (response.success) {
+                    alert('Relevance Settings Saved!');
+                } else {
+                    let msg = 'Failed to save settings.\n';
+                    if (response.errors && response.errors.length > 0) {
+                        response.errors.forEach(err => {
+                            msg += `- ${err.id}: ${err.error}\n`;
+                        });
+                    } else if (response.message) {
+                        msg += response.message;
+                    }
+                    alert(msg);
+                }
+            }).fail(function (xhr) {
+                const response = xhr.responseJSON;
+                let msg = 'Failed to save settings.\n';
+                if (response && response.errors && response.errors.length > 0) {
+                    response.errors.forEach(err => {
+                        msg += `- ${err.id}: ${err.error}\n`;
+                    });
+                } else if (response && response.message) {
+                    msg += response.message;
+                }
+                alert(msg);
+            }).always(function () {
+                $btn.prop('disabled', false).text(originalText);
+            });
+        },
+
+        saveStylingSettings: function () {
+            const $btn = this.$saveStylingBtn;
+            const originalText = $btn.text();
+
+            const payload = {
+                section: 'styling',
+                primary_color: this.$ssPrimaryColor.val(),
+                text_color: this.$ssTextColor.val(),
+                card_bg: this.$ssCardBg.val(),
+                border_radius: this.$ssBorderRadius.val()
+            };
+
+            $btn.prop('disabled', true).text('Saving...');
+
+            this.request('POST', '/settings', payload).done((response) => {
+                if (response.success) {
+                    alert('Styling Settings Saved!');
+                    // Refresh custom CSS if we have a way, or just reload
+                    location.reload();
+                } else {
+                    alert('Failed to save styling.');
+                }
+            }).always(() => {
+                $btn.prop('disabled', false).text(originalText);
+            });
+        },
+
+        handleDiagnose: function () {
+            const $btn = $('#ss-test-synonyms');
+            const originalText = $btn.text();
+
+            $btn.prop('disabled', true).text('Testing Paths...');
+
+            this.request('GET', '/diagnose').done((response) => {
+                if (response.success) {
+                    let msg = "Advanced Synonym Discovery:\n\n";
+                    msg += "Detected Version: " + response.report.version + "\n";
+                    msg += "Admin Connection: " + response.report.admin_status + "\n\n";
+                    
+                    msg += "ENDPOINT MATRIX:\n";
+                    for (const path in response.report.paths) {
+                        msg += `${path}: ${response.report.paths[path]}\n`;
+                    }
+                    
+                    msg += "\nRECOMMENDATION:\n";
+                    let found = false;
+                    for (const path in response.report.paths) {
+                        if (response.report.paths[path].includes('200 OK')) {
+                            msg += `✔ Detected active path: ${path}\n`;
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!found) {
+                        msg += "✖ All synonym paths 404'd. This confirms a Proxy/WAF is blocking these specific URL segments.";
+                    }
+                    
+                    alert(msg);
+                } else {
+                    alert('Diagnostic failed: ' + (response.message || 'Unknown error'));
+                }
+            }).fail((xhr) => {
+                alert('Request failed. Check server logs.');
+            }).always(() => {
+                $btn.prop('disabled', false).text(originalText);
+            });
+        },
+
+        handleSearchUISave: function (e) {
+            e.preventDefault();
+            const $btn = this.$saveSearchUIBtn;
+            const originalText = $btn.text();
+            $btn.prop('disabled', true).text('Saving...');
+
+            // Gather Facets Config
+            const facets = [];
+            $('#ss-facets-config-container tbody tr').each(function () {
+                const $row = $(this);
+                const $cb = $row.find('.ss-facet-enable');
+                if ($cb.length) {
+                    facets.push({
+                        source: $cb.data('source'),
+                        type: $cb.data('type'),
+                        label: $row.find('.ss-facet-label').val(),
+                        target: $row.find('.ss-facet-target').val(),
+                        data_type: $row.find('.ss-facet-datatype').val(),
+                        enabled: $cb.is(':checked')
+                    });
+                }
+            });
+
+            const payload = {
+                section: 'experience',
+                experience_settings: {
+                    typo_tolerance: this.$ssTypoTolerance.is(':checked'),
+                    instant_search: this.$ssInstantSearch.is(':checked'),
+                    show_thumbnail: this.$ssGlobalShowThumb.is(':checked'),
+                    show_price: this.$ssGlobalShowPrice.is(':checked'),
+                    show_excerpt: this.$ssGlobalShowExcerpt.is(':checked'),
+                    limit: parseInt(this.$ssGlobalLimit.val()) || 10,
+                    layout: this.$ssGlobalLayout.val() || 'overlay',
+                    browse_mode: this.$ssGlobalLayout.val() === 'catalog',
+                    search_scope: {
+                        posts: true,
+                        terms: $('#ss-scope-terms').is(':checked'),
+                        users: $('#ss-scope-users').is(':checked')
+                    }
+                },
+                facets_config: facets
+            };
+
+            this.request('POST', '/settings', payload).done(function (response) {
+                if (response.success) {
+                    alert('Search UI Settings Saved!');
+                } else {
+                    alert('Failed to save settings: ' + (response.message || 'Unknown error'));
+                }
+            }).fail(function (xhr) {
+                const response = xhr.responseJSON;
+                alert('Failed to save settings: ' + (response && response.message ? response.message : 'Unknown network error'));
+            }).always(function () {
+                $btn.prop('disabled', false).text(originalText);
+            });
+        },
+
+        updateShortcodePreview: function () {
+            let sc = '[swift_search';
+            const placeholder = this.$scPlaceholder.val() || 'Search...';
+            const limit = this.$scLimit.val();
+            
+            // Attributes only added if they OVERRIDE the global experience setting
+            const globalLimit = parseInt(this.$ssGlobalLimit.val()) || 10;
+            const globalInstant = this.$ssInstantSearch.is(':checked');
+            const globalThumb = this.$ssGlobalShowThumb.is(':checked');
+            const globalPrice = this.$ssGlobalShowPrice.is(':checked');
+            const globalExcerpt = this.$ssGlobalShowExcerpt.is(':checked');
+            const globalLayout = this.$ssGlobalLayout.val() || 'overlay';
+
+            if (placeholder !== 'Search...') {
+                sc += ` placeholder="${placeholder}"`;
+            }
+
+            if (limit && parseInt(limit) !== globalLimit) {
+                sc += ` limit="${limit}"`;
+            }
+
+            if (this.$scShowThumb.is(':checked') !== globalThumb) {
+                sc += ` show_thumbnail="${this.$scShowThumb.is(':checked')}"`;
+            }
+
+            if (this.$scShowPrice.is(':checked') !== globalPrice) {
+                sc += ` show_price="${this.$scShowPrice.is(':checked')}"`;
+            }
+
+            if (this.$scShowExcerpt.is(':checked') !== globalExcerpt) {
+                sc += ` show_excerpt="${this.$scShowExcerpt.is(':checked')}"`;
+            }
+
+            const chosenLayout = this.$scLayout.val();
+            if (chosenLayout !== 'default' && chosenLayout !== globalLayout) {
+                sc += ` layout="${chosenLayout}"`;
+            }
+
+            // Post Types Override
+            const selectedTypes = [];
+            $('.sc-post-type-selector:checked').each(function () {
+                selectedTypes.push($(this).val());
+            });
+
+            if (selectedTypes.length > 0) {
+                sc += ` post_types="${selectedTypes.join(',')}"`;
+            }
+
+            sc += ']';
+            this.$scPreview.text(sc);
+        },
+
+        copyShortcode: function () {
+            const code = this.$scPreview.text();
+            const $btn = this.$scCopyBtn;
+
+            navigator.clipboard.writeText(code).then(function () {
+                const originalText = $btn.text();
+                $btn.text('Copied!');
+                setTimeout(() => $btn.text(originalText), 2000);
+            });
+        },
+        // ... (End Shortcode) ...
+
+        handleNavClick: function (e) {
+            const $item = $(e.currentTarget);
+            const step = $item.data('step');
+            this.switchView(step);
+        },
+
+        switchView: function (stepName) {
+            this.$navItems.removeClass('active');
+            this.$navItems.filter('[data-step="' + stepName + '"]').addClass('active');
+
+            this.$views.hide();
+            $('#view-' + stepName).fadeIn(200);
+
+            if (stepName === 'analytics') {
+                this.loadAnalytics();
+            } else if (stepName === 'pinning') {
+                this.loadPinnedItems();
+            }
+        },
+
+        loadAnalytics: function () {
+            const self = this;
+            const $topTable = $('#ss-analytics-top tbody');
+            const $zeroTable = $('#ss-analytics-zero tbody');
+
+            // Reset UI
+            $topTable.html('<tr><td colspan="3">Loading...</td></tr>');
+            $zeroTable.html('<tr><td colspan="2">Loading...</td></tr>');
+
+            this.request('GET', '/analytics')
+                .done(function (response) {
+
+
+                    if (response && response.success) {
+                        // Render Top Searches
+                        if (response.data.top_queries && response.data.top_queries.length > 0) {
+                            $topTable.empty();
+                            response.data.top_queries.forEach(function (item) {
+                                const date = item.last_hit ? new Date(item.last_hit).toLocaleDateString() : '-';
+                                $topTable.append(`
+                                    <tr>
+                                        <td>${self.escapeHtml(item.query)}</td>
+                                        <td>${item.count}</td>
+                                        <td>${date}</td>
+                                    </tr>
+                                `);
+                            });
+
+                            // Render Chart
+                            self.renderAnalyticsChart(response.data.top_queries);
+                        } else {
+                            $topTable.html('<tr><td colspan="3">No searches recorded yet.</td></tr>');
+                        }
+
+                        // Render Zero Results
+                        if (response.data.no_results && response.data.no_results.length > 0) {
+                            $zeroTable.empty();
+                            response.data.no_results.forEach(function (item) {
+                                $zeroTable.append(`
+                                    <tr>
+                                        <td>${self.escapeHtml(item.query)}</td>
+                                        <td>${item.count}</td>
+                                    </tr>
+                                `);
+                            });
+                        } else {
+                            $zeroTable.html('<tr><td colspan="2">No zero-result-queries found.</td></tr>');
+                        }
+                    } else {
+                        // Handle logical failure (success: false or missing)
+                        const msg = (response && response.message) ? response.message : 'Unknown error';
+                        $topTable.html('<tr><td colspan="3">Error: ' + self.escapeHtml(msg) + '</td></tr>');
+                        $zeroTable.html('<tr><td colspan="2">Error loading data.</td></tr>');
+                    }
+                })
+                .fail(function (jqXHR, textStatus, errorThrown) {
+                    $topTable.html('<tr><td colspan="3">Failed to load data (API Error).</td></tr>');
+                    $zeroTable.html('<tr><td colspan="2">Failed to load data.</td></tr>');
+                });
+        },
+
+        /**
+         * Render Analytics Chart (Chart.js).
+         */
+        renderAnalyticsChart: function (data) {
+            const ctx = document.getElementById('ss-analytics-chart');
+            if (!ctx) return;
+
+            // Destroy old chart if exists
+            if (this.chartInstance) {
+                this.chartInstance.destroy();
+            }
+
+            const labels = data.map(item => item.query);
+            const counts = data.map(item => parseInt(item.count));
+
+            // Check if Chart is loaded
+            if (typeof Chart === 'undefined') {
+                return;
+            }
+
+            this.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Search Frequency',
+                        data: counts,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Top 10 Search Terms'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: '#f3f4f6'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        },
+
+        loadPinnedItems: function () {
+            const self = this;
+            this.request('GET', '/pinning/items').done(function (response) {
+                if (response.success) {
+                    self.pinnedItems = response.data || [];
+                    self.renderPinnedList();
+                }
+            });
+        },
+
+        handlePinningSearch: function () {
+            const term = this.$pinningSearch.val().trim();
+            const self = this;
+
+            clearTimeout(this.searchTimeout);
+
+            if (term.length < 2) {
+                this.$pinningResults.hide();
+                return;
+            }
+
+            this.searchTimeout = setTimeout(function () {
+                self.request('POST', '/pinning/search', { term: term }).done(function (response) {
+                    if (response.success) {
+                        self.renderPinningResults(response.data);
+                    }
+                });
+            }, 300);
+        },
+
+        renderPinningResults: function (results) {
+            if (!results || results.length === 0) {
+                this.$pinningResults.html('<div class="no-results">No products found</div>').show();
+                return;
+            }
+
+            let html = '<ul>';
+            results.forEach(item => {
+                html += `<li class="ss-autocomplete-item" data-id="${item.id}" data-title="${item.title}" data-type="${item.type}">
+                    <span class="title">${item.title}</span>
+                    <span class="type pill">${item.type}</span>
+                </li>`;
+            });
+            html += '</ul>';
+            this.$pinningResults.html(html).show();
+        },
+
+        addPinnedItem: function (e) {
+            const $el = $(e.currentTarget);
+            const item = {
+                id: $el.data('id'),
+                title: $el.data('title'),
+                type: $el.data('type')
+            };
+
+            if (this.pinnedItems.find(i => i.id == item.id)) {
+                this.$pinningSearch.val('');
+                this.$pinningResults.hide();
+                return;
+            }
+
+            this.pinnedItems.push(item);
+            this.$pinningSearch.val('');
+            this.$pinningResults.hide();
+            this.renderPinnedList();
+        },
+
+        removePinnedItem: function (e) {
+            const id = $(e.currentTarget).data('id');
+            this.pinnedItems = this.pinnedItems.filter(i => i.id != id);
+            this.renderPinnedList();
+        },
+
+        renderPinnedList: function () {
+            if (this.pinnedItems.length === 0) {
+                this.$pinnedListContainer.hide();
+                this.$pinningEmpty.show();
+                return;
+            }
+
+            this.$pinningEmpty.hide();
+            let html = '<div class="ss-pinned-grid">';
+            this.pinnedItems.forEach((item, index) => {
+                html += `<div class="ss-pinned-card">
+                    <span class="position">#${index + 1}</span>
+                    <div class="details">
+                        <span class="title">${item.title}</span>
+                        <span class="type">${item.type}</span>
+                    </div>
+                    <button type="button" class="remove-pin" data-id="${item.id}">&times;</button>
+                </div>`;
+            });
+            html += '</div>';
+            this.$pinnedListContainer.html(html).show();
+        },
+
+        savePinnedItems: function (e) {
+            if (e) e.preventDefault();
+            const $btn = this.$savePinningBtn;
+            const originalText = $btn.text();
+            $btn.prop('disabled', true).text('Saving...');
+
+            const payload = { items: this.pinnedItems };
+            const self = this;
+            this.request('POST', '/pinning/items', payload).done(function (resp) {
+                if (resp.success) {
+                    alert('Pinned items saved!');
+                } else {
+                    alert('Failed to save pinned items.');
+                }
+            }).always(function () {
+                $btn.prop('disabled', false).text(originalText);
+            });
+        },
+
+
+        renderConnectionState: function (isConnected) {
+            const $btn = this.$connectBtn;
+            const $inputs = this.$connectForm.find('input, select');
+            
+            // Elements to lock if disconnected
+            const $tabs = this.$navItems.not('[data-step="connect"]');
+            const $syncBtn = this.$syncBtn;
+            const $saveBtns = $('.ss-btn-primary').not($btn); // All other save buttons
+
+            if (isConnected) {
+                // Connected State
+                $inputs.prop('disabled', true);
+                $btn.removeClass('ss-btn-primary').addClass('ss-btn-danger')
+                    .text('Disconnect')
+                    .attr('data-action', 'disconnect')
+                    .prop('disabled', false);
+
+                $inputs.css('cursor', 'default');
+
+                // Unlock UI
+                $tabs.removeClass('ss-disabled').css('pointer-events', 'auto').css('opacity', '1');
+                $syncBtn.prop('disabled', false);
+                $saveBtns.prop('disabled', false);
+
+            } else {
+                // Disconnected State
+                $inputs.prop('disabled', false);
+                $btn.removeClass('ss-btn-danger').addClass('ss-btn-primary')
+                    .text(swiftSearchConfig.texts.save_connect || 'Save & Test Connection')
+                    .removeAttr('data-action')
+                    .prop('disabled', false);
+
+                $inputs.css('cursor', 'text');
+
+                // Lock UI
+                $tabs.addClass('ss-disabled').css('pointer-events', 'none').css('opacity', '0.5');
+                $syncBtn.prop('disabled', true);
+                $saveBtns.prop('disabled', true);
+
+                // Force switch to Connect tab if not there
+                if (!$('.ss-nav-item[data-step="connect"]').hasClass('active')) {
+                    this.switchView('connect');
+                }
+            }
+        },
+
+        handleConnect: function (e) {
+            if (e) e.preventDefault();
+            const $btn = this.$connectBtn;
+
+            // Check if Disconnect Action
+            if ($btn.attr('data-action') === 'disconnect') {
+                this.handleDisconnect();
+                return;
+            }
+
+            const formData = this.$connectForm.serialize();
+            const self = this;
+            const oldText = $btn.text();
+
+            this.clearConnectionError();
+            $btn.prop('disabled', true).text(swiftSearchConfig.texts.connecting);
+
+            // Manual Ajax for Connect to handle Fail cleanly with Nonce
+            $.ajax({
+                url: swiftSearchConfig.apiUrl + '/connect',
+                method: 'POST',
+                data: formData,
+                headers: { 'X-WP-Nonce': swiftSearchConfig.nonce }
+            }).done(function (response) {
+                if (response.success) {
+                    alert(swiftSearchConfig.texts.success);
+                    self.updateStatus(true, response.data.doc_count);
+                    self.renderConnectionState(true);
+                } else {
+                    const msg = response.data && response.data.message ? response.data.message : swiftSearchConfig.texts.error;
+                    self.showConnectionError(msg);
+                    self.updateStatus(false);
+                    self.renderConnectionState(false);
+                }
+            }).fail(function (xhr, status, error) {
+                let msg = swiftSearchConfig.texts.error;
+                const res = xhr.responseJSON;
+                if (res && res.data && res.data.message) {
+                    msg = res.data.message;
+                } else if (res && res.message) {
+                    msg = res.message;
+                }
+
+                self.showConnectionError(msg + ' (HTTP ' + xhr.status + ')');
+                self.updateStatus(false);
+                self.renderConnectionState(false);
+            }).always(function () {
+                // If connected, renderConnectionState handles the button text/state
+                // Only reset if we failed/didn't switch to 'Disconnect' mode
+                const isConnected = self.$statusEl.hasClass('connected');
+                if (!isConnected) {
+                    $btn.prop('disabled', false).text(oldText);
+                }
+            });
+        },
+
+        handleDisconnect: function () {
+            if (!confirm('Are you sure you want to disconnect? This will stop search functionality.')) return;
+
+            const self = this;
+            const $btn = this.$connectForm.find('button[type="submit"]');
+            $btn.prop('disabled', true).text('Disconnecting...');
+
+            this.request('POST', '/disconnect', {}).done(function (response) {
+                self.updateStatus(false, 0);
+                self.renderConnectionState(false);
+                alert('Disconnected.');
+                // Clear fields
+                $('#ts-host').val('');
+                $('#ts-port').val('443');
+                $('#ts-api-key').val('');
+                $('#ts-search-key').val('');
+            }).always(function () {
+                // Render state handles enabling inputs
+            });
+        },
+
+        showConnectionError: function (msg) {
+            let $err = $('#ss-connection-error');
+            if (!$err.length) {
+                $err = $('<div id="ss-connection-error" class="notice notice-error inline" style="margin: 10px 0 0 0;"><p></p></div>');
+                this.$connectForm.find('.submit-wrapper, button[type="submit"]').last().after($err);
+                if (!$('#ss-connection-error').length) {
+                    this.$connectForm.append($err);
+                }
+            }
+            $err.find('p').text(msg);
+            $err.show();
+        },
+
+        clearConnectionError: function () {
+            $('#ss-connection-error').hide();
+        },
+
+        checkStatus: function () {
+            const self = this;
+            this.request('GET', '/status').done(function (response) {
+                if (response.success) {
+                    self.updateStatus(response.data.connected, response.data.doc_count);
+                }
+            });
+        },
+
+        checkPlan: function () {
+            // All features are unlocked in the open-source version.
+            this.$proGates.removeClass('locked ss-feature-disabled');
+            this.$proGates.find('.ss-feature-lock-overlay').remove();
+            this.$proGates.find('input, select, textarea').prop('disabled', false);
+        },
+
+        updateStatus: function (isConnected, docCount) {
+            if (isConnected) {
+                this.$statusEl.removeClass('disconnected').addClass('connected').text('Connected');
+            } else {
+                this.$statusEl.removeClass('connected').addClass('disconnected').text('Disconnected');
+            }
+
+            this.renderConnectionState(isConnected);
+
+            if (docCount !== undefined) {
+                this.$docCountEl.text(docCount);
+            }
+        },
+
+        startSync: function () {
+            if (!confirm(swiftSearchConfig.texts.confirmSync || 'This will index all selected content in the background. You can leave this page.')) return;
+
+            const self = this;
+            this.$syncBtn.prop('disabled', true);
+            this.$resetBtn.prop('disabled', true);
+            this.$syncStatusText.text('Initializing Background Job...');
+            this.updateProgress(0, 'Starting...');
+
+            this.request('POST', '/sync/start', {}).done(function (response) {
+                if (response.success) {
+                    self.pollStatus();
+                } else {
+                    self.syncError(response.data.message || 'Failed to start.');
+                }
+            }).fail(function () {
+                self.syncError('Network error starting sync.');
+            });
+        },
+
+        pollStatus: function (isInitCheck = false) {
+            const self = this;
+            this.request('GET', '/sync/status').done(function (response) {
+                if (response.success) {
+                    const data = response.data;
+
+                    if (data.debug_loopback) {
+                        // If loopback failed (non-200), fallback to browser-driven indexing
+                        // BUT ONLY if we are actively trying to run a sync (not on page load / init check)
+                        if (!isInitCheck && data.debug_loopback.response_code && data.debug_loopback.response_code !== 200) {
+                            self.syncActive = true;
+                            self.syncType = 'posts';
+                            self.syncPage = 1;
+                            self.syncRetry = 0;
+                            self.updateProgress(0, 'Background blocked by server firewall. Running via browser...');
+                            self.runBrowserSync();
+                            return;
+                        }
+                    }
+
+                    if (data.active) {
+                        // Resuming or Running
+                        self.$syncBtn.prop('disabled', true);
+                        self.$resetBtn.prop('disabled', true);
+
+                        // Calculate Percent
+                        const total = parseInt(data.total) || 1;
+                        const processed = parseInt(data.processed) || 0;
+                        const percent = Math.round((processed / total) * 100);
+
+                        self.updateProgress(Math.min(percent, 99), data.message || 'Indexing...');
+
+                        // Poll again
+                        if (!isInitCheck) {
+                            setTimeout(function () {
+                                self.pollStatus();
+                            }, 2000);
+                        }
+                    } else {
+                        // Not Active (Complete or Idle)
+
+                        // Show Last Sync Stats
+                        if (data.last_sync_completed_at) {
+                            const date = new Date(data.last_sync_completed_at * 1000);
+                            let statusHtml = `Last Sync: ${date.toLocaleString()}`;
+
+                            if (data.error_count > 0) {
+                                statusHtml += ` | <span style="color: #ef4444; font-weight: bold;">${data.error_count} Failed</span>`;
+                            } else {
+                                statusHtml += ` ( <span style="color: #10b981; font-weight: bold;">Success</span> )`;
+                            }
+
+                            // Only update text if we are not showing "Complete!" animation
+                            if (isInitCheck) {
+                                self.updateProgress(data.processed > 0 ? 100 : 0, statusHtml);
+                            }
+                        }
+
+                        // Render Logs
+                        self.renderLogs(data.errors);
+
+                        // Finished JUST NOW?
+                        if (!isInitCheck && data.processed >= data.total && data.total > 0) {
+                            self.updateProgress(100, 'Complete!');
+                            self.finishSync(data);
+                        } else if (isInitCheck) {
+                            // Just restore UI state to "ready"
+                            self.$syncBtn.prop('disabled', false);
+                            self.$resetBtn.prop('disabled', false);
+                        }
+                    }
+                }
+            });
+        },
+
+        finishSync: function (data) {
+            this.$syncStatusText.text('Indexing Complete!');
+            this.$syncBtn.prop('disabled', false);
+            this.$resetBtn.prop('disabled', false);
+            this.checkStatus(); // Update doc count
+
+            // Refresh to show Last Sync stats after a moment
+            const self = this;
+            setTimeout(function () {
+                self.pollStatus(true);
+            }, 1000);
+
+            setTimeout(function () {
+                alert('Success: Background indexing complete.');
+            }, 500);
+        },
+
+        runBrowserSync: function () {
+            if (!this.syncActive) return;
+
+            const self = this;
+            this.$syncBtn.prop('disabled', true);
+            this.$resetBtn.prop('disabled', true);
+
+            this.request('POST', '/sync/batch', {
+                type: self.syncType,
+                page: self.syncPage
+            }).done(function (response) {
+                if (response.success && response.data) {
+                    self.syncRetry = 0;
+                    const data = response.data;
+
+                    // Calculate overall percent based on type
+                    let overallPercent = 0;
+                    const page = parseInt(data.page) || 1;
+                    const total_pages = parseInt(data.total_pages) || 1;
+
+                    if (self.syncType === 'posts') {
+                        let subPercent = Math.min(Math.round((page / Math.max(total_pages, 1)) * 100), 100);
+                        overallPercent = Math.round(subPercent * 0.7);
+                    } else if (self.syncType === 'terms') {
+                        let subPercent = Math.min(Math.round((page / Math.max(total_pages, 1)) * 100), 100);
+                        overallPercent = 70 + Math.round(subPercent * 0.2);
+                    } else if (self.syncType === 'users') {
+                        let subPercent = Math.min(Math.round((page / Math.max(total_pages, 1)) * 100), 100);
+                        overallPercent = 90 + Math.round(subPercent * 0.1);
+                    }
+
+                    self.updateProgress(
+                        Math.min(overallPercent, 99),
+                        `Firewall block detected. Running via browser: Indexing ${self.syncType} (page ${page} of ${total_pages})...`
+                    );
+
+                    if (!data.complete) {
+                        self.syncPage = page + 1;
+                        setTimeout(function () {
+                            self.runBrowserSync();
+                        }, 100);
+                    } else {
+                        // Current type complete. Move to next type.
+                        if (self.syncType === 'posts') {
+                            self.syncType = 'terms';
+                            self.syncPage = 1;
+                            setTimeout(function () {
+                                self.runBrowserSync();
+                            }, 100);
+                        } else if (self.syncType === 'terms') {
+                            self.syncType = 'users';
+                            self.syncPage = 1;
+                            setTimeout(function () {
+                                self.runBrowserSync();
+                            }, 100);
+                        } else {
+                            // All complete!
+                            self.syncActive = false;
+                            self.updateProgress(100, 'Complete!');
+                            self.finishSync(data);
+                        }
+                    }
+                } else {
+                    self.handleSyncBatchError();
+                }
+            }).fail(function () {
+                self.handleSyncBatchError();
+            });
+        },
+
+        handleSyncBatchError: function () {
+            const self = this;
+            if (this.syncRetry < 3) {
+                this.syncRetry++;
+                this.updateProgress(
+                    null,
+                    `<span style="color: #ef4444;">Network issue. Retrying batch in 3s (Attempt ${this.syncRetry}/3)...</span>`
+                );
+                setTimeout(function () {
+                    self.runBrowserSync();
+                }, 3000);
+            } else {
+                this.syncActive = false;
+                this.$syncBtn.prop('disabled', false);
+                this.$resetBtn.prop('disabled', false);
+                this.syncError('Sync failed due to persistent connection or server errors. Please try again.');
+            }
+        },
+
+        updateProgress: function (percent, text) {
+            if (text) {
+                this.$syncStatusText.html(text);
+            }
+
+            // Render SVG Circle if not present
+            if (this.$progressCircle.find('svg').length === 0) {
+                this.$progressCircle.html(`
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                    <path class="circle-bg"
+                        d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                        style="fill: none; stroke: #eee; stroke-width: 3;"
+                    />
+                    <path class="circle"
+                        stroke-dasharray="0, 100"
+                        d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                        style="fill: none; stroke: #2271b1; stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.3s ease;"
+                    />
+                    <text x="18" y="20.35" class="percentage" style="fill: #666; font-family: sans-serif; font-size: 0.5em; text-anchor: middle;">0%</text>
+                </svg>
+                `);
+            }
+
+            // Update Stroke
+            const $path = this.$progressCircle.find('.circle');
+            const $text = this.$progressCircle.find('.percentage');
+
+            $path.attr('stroke-dasharray', `${percent}, 100`);
+            $text.text(`${percent}%`);
+        },
+
+        renderLogs: function (errors) {
+            if (!errors || (Array.isArray(errors) && errors.length === 0) || (typeof errors === 'object' && Object.keys(errors).length === 0)) {
+                this.$logContainer.html('<div class="ss-log-placeholder">No errors recorded.</div>');
+                return;
+            }
+
+            let html = '';
+
+            if (Array.isArray(errors)) {
+                errors.forEach(err => {
+                    const time = err.timestamp ? new Date(err.timestamp).toLocaleString() : '';
+                    const errText = this.escapeHtml(err.error || JSON.stringify(err));
+                    const idText = err.id ? `(ID: ${err.id})` : '';
+
+                    html += `<div class="ss-log-entry" style="font-family: monospace; font-size: 11px;">
+                        <span style="color: #6b7280;">[${time}]</span> 
+                        <span style="color: #ef4444; font-weight: 600;">[Error]</span> 
+                        <span style="color: #e5e7eb;">${errText}</span> 
+                        <span style="color: #9ca3af;">${idText}</span>
+                     </div>`;
+                });
+            } else {
+                // Fallback for old format if any (though we flattened it)
+                for (const [msg, ids] of Object.entries(errors)) {
+                    html += `<div class="ss-log-entry">
+                        <strong>[Error] ${this.escapeHtml(msg)} <span style="color:#d1d5db; font-weight:normal; font-size:11px;">(${ids ? ids.length : 0} items)</span></strong>
+                        <div class="ids">IDs: ${ids ? ids.join(', ') : ''}</div>
+                    </div>`;
+                }
+            }
+
+            this.$logContainer.html(html);
+        },
+
+        syncError: function (msg) {
+            this.$syncStatusText.html('<span style="color: #ef4444;">Error: ' + msg + '</span>');
+            this.$syncBtn.prop('disabled', false);
+            this.$resetBtn.prop('disabled', false);
+        },
+
+
+
+        resetIndex: function () {
+            if (!confirm(swiftSearchConfig.texts.confirmReset || 'Are you sure you want to delete the entire index? This cannot be undone.')) return;
+
+            const self = this;
+            this.$resetBtn.prop('disabled', true);
+            this.$syncStatusText.text('Resetting...');
+
+            this.request('POST', '/reset', {}).done(function (response) {
+                self.$resetBtn.prop('disabled', false);
+                self.$syncStatusText.text('Index Cleared.');
+                self.updateProgress(0);
+                self.checkStatus();
+                alert('Success: Index has been deleted.');
+            }).fail(function () {
+                self.$syncStatusText.text('Error resetting index.');
+                self.$resetBtn.prop('disabled', false);
+            });
+        },
+
+        factoryReset: function () {
+            if (!confirm('WARNING: Are you sure you want to restore factory default settings? This will delete all your local configuration settings, custom mappings, layout choices, search synonyms, styling designs, and server credentials. This action cannot be undone.')) return;
+
+            const self = this;
+            const $btn = this.$factoryResetBtn;
+            const originalText = $btn.text();
+
+            $btn.prop('disabled', true).text('Resetting...');
+
+            this.request('POST', '/settings/reset', {}).done(function (response) {
+                alert('Success: Plugin has been restored to factory defaults.');
+                location.reload();
+            }).fail(function () {
+                alert('Error: Failed to perform factory reset.');
+                $btn.prop('disabled', false).text(originalText);
+            });
+        },
+
+        // --- Custom Fields (Pro) ---
+
+        renderCustomFields: function () {
+            const container = $('#ss-custom-fields-container');
+            if (!container.length) return;
+
+            // Get Settings
+            const mappings = swiftSearchConfig.custom_fields || {};
+            const availableTypes = swiftSearchConfig.available_post_types || [];
+
+            let html = '';
+
+            // Group by Post Type
+            availableTypes.forEach(pt => {
+                // Only show if selected in Content Settings? Or show all?
+                // Better to show all or maybe just checked ones. 
+                // Let's iterate all available, but maybe collapse them?
+                // For now, simple stacked tables.
+
+                const fields = mappings[pt.name] || [];
+
+                html += `<div class="ss-cf-section" style="margin-bottom: 30px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden;">`;
+                html += `<div style="background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin:0; font-size: 14px; font-weight: 600;">${pt.label} (${pt.name})</h3>
+                    <button type="button" class="button ss-add-field-btn" data-pt="${pt.name}">+ Add Field</button>
+                 </div>`;
+
+                html += `<table class="wp-list-table widefat fixed striped" style="border: none; box-shadow: none;">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Meta Key</th>
+                            <th style="width: 30%;">Field Name (in Typesense)</th>
+                            <th style="width: 15%;">Type</th>
+                            <th style="width: 15%;">Facet?</th>
+                            <th style="width: 10%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="ss-cf-body" data-pt="${pt.name}">`;
+
+                if (fields.length > 0) {
+                    fields.forEach((field, index) => {
+                        html += this.getCustomFieldRowHtml(pt.name, index, field);
+                    });
+                } else {
+                    html += `<tr class="ss-cf-empty"><td colspan="5">No custom fields mapped.</td></tr>`;
+                }
+
+                html += `</tbody></table></div>`;
+            });
+
+            container.html(html);
+        },
+
+        getCustomFieldRowHtml: function (postType, index, field = {}) {
+            return `
+                <tr>
+                    <td>
+                        <input type="text" class="regular-text" style="width: 100%;" 
+                            name="custom_fields[${postType}][${index}][key]" 
+                            value="${field.key || ''}" placeholder="_sku, event_date...">
+                    </td>
+                    <td>
+                        <input type="text" class="regular-text" style="width: 100%;" 
+                            name="custom_fields[${postType}][${index}][name]" 
+                            value="${field.name || ''}" placeholder="sku, date...">
+                    </td>
+                    <td>
+                        <select style="width: 100%;" name="custom_fields[${postType}][${index}][type]">
+                            <option value="string" ${field.type === 'string' ? 'selected' : ''}>String</option>
+                            <option value="int32" ${field.type === 'int32' ? 'selected' : ''}>Integer</option>
+                            <option value="float" ${field.type === 'float' ? 'selected' : ''}>Float</option>
+                            <option value="bool" ${field.type === 'bool' ? 'selected' : ''}>Boolean</option>
+                            <option value="string[]" ${field.type === 'string[]' ? 'selected' : ''}>Array (String)</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="checkbox" name="custom_fields[${postType}][${index}][facet]" value="1" ${field.facet ? 'checked' : ''}>
+                    </td>
+                    <td>
+                        <button type="button" class="button-link ss-remove-field-btn" style="color: #ef4444;">Remove</button>
+                    </td>
+                </tr>
+            `;
+        },
+
+        // --- Faceted Navigation (Pro) ---
+
+        renderFacetsConfig: function () {
+            const container = $('#ss-facets-config-container');
+
+            if (!container.length) return;
+
+            try {
+                // Robust Config Retrieval
+                let facetsConfig = swiftSearchConfig.facets_config || [];
+                if (!Array.isArray(facetsConfig)) {
+                    // Handle case where PHP associative array becomes JS Object
+                    facetsConfig = Object.values(facetsConfig);
+                }
+
+                // 1. Gather Sources
+                let sources = [];
+
+                // Taxonomies safely (Handle Object or Array)
+                let taxesRaw = swiftSearchConfig.available_taxonomies || [];
+                const taxes = Array.isArray(taxesRaw) ? taxesRaw : Object.values(taxesRaw);
+
+                taxes.forEach(tax => {
+                    sources.push({
+                        source: tax.name,
+                        label: tax.label,
+                        type: 'taxonomy'
+                    });
+                });
+
+                // Custom Fields safely
+                const customFields = swiftSearchConfig.custom_fields || {};
+                const uniqueCustomFacets = {};
+
+                if (customFields && typeof customFields === 'object') {
+                    Object.values(customFields).forEach(fields => {
+                        if (Array.isArray(fields)) {
+                            fields.forEach(f => {
+                                if (f.facet) {
+                                    if (!uniqueCustomFacets[f.key]) {
+                                        uniqueCustomFacets[f.key] = {
+                                            source: f.key,
+                                            label: f.name || f.key,
+                                            type: 'meta'
+                                        };
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+                Object.values(uniqueCustomFacets).forEach(f => sources.push(f));
+
+                // 2. Render Table
+                let html = `<table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align:center;">Enable</th>
+                        <th style="width: 20%;">Source</th>
+                        <th style="width: 25%;">Display Label</th>
+                        <th style="width: 25%;">Target Field</th>
+                        <th style="width: 15%;">Data Type</th>
+                        <th style="width: 60px;">Type</th>
+                    </tr>
+                </thead>
+                <tbody id="ss-facets-tbody">`;
+
+                if (sources.length === 0) {
+                    html += `<tr><td colspan="6" style="text-align:center; padding: 20px; color: #6b7280;">No available facets found.<br>Enable indexing for Taxonomies or map Custom Fields as 'Facet'.</td></tr>`;
+                } else {
+                    sources.forEach(src => {
+                        // Check saved config
+                        const existing = facetsConfig.find(f => f.source === src.source && f.type === src.type);
+                        const isChecked = existing ? (String(existing.enabled) === 'true' || existing.enabled === true) : false;
+                        const displayLabel = existing ? existing.label : src.label;
+                        
+                        // Smart Defaults for Target Name
+                        let targetName = existing ? existing.target : '';
+                        if (!targetName) {
+                            if (src.type === 'taxonomy') {
+                                if (src.source === 'category') targetName = 'category';
+                                else if (src.source === 'post_tag') targetName = 'tag';
+                                else targetName = 'tax_' + src.source.replace(/[^a-zA-Z0-9_]/g, '_');
+                            } else if (src.source === '_sku') {
+                                targetName = 'sku';
+                            } else if (src.source === '_price') {
+                                targetName = 'price';
+                            } else if (src.source === '_stock_status') {
+                                targetName = 'in_stock';
+                            } else {
+                                targetName = src.source.replace(/^_/, '').replace(/[^a-zA-Z0-9_]/g, '_'); // basic cleaning and hyphen/special char sanitization
+                            }
+                        }
+
+                        // Smart Defaults for Data Type
+                        let dataType = existing ? existing.data_type : '';
+                        if (!dataType) {
+                            if (src.type === 'taxonomy') {
+                                dataType = 'string[]';
+                            } else if (src.source === '_price') {
+                                dataType = 'float';
+                            } else if (src.source === '_stock_status') {
+                                dataType = 'bool';
+                            } else {
+                                dataType = 'string';
+                            }
+                        }
+
+                        html += `<tr>
+                        <td style="text-align:center;">
+                            <input type="checkbox" class="ss-facet-enable" 
+                                data-source="${src.source}" 
+                                data-type="${src.type}"
+                                ${isChecked ? 'checked' : ''}>
+                        </td>
+                        <td>
+                            <code>${src.source}</code>
+                        </td>
+                        <td>
+                            <input type="text" class="ss-facet-label" value="${displayLabel}" style="width: 100%;">
+                        </td>
+                        <td>
+                            <input type="text" class="ss-facet-target" value="${targetName}" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder="Typesense field name">
+                        </td>
+                        <td>
+                            <select class="ss-facet-datatype" style="width: 100%;">
+                                <option value="string" ${dataType === 'string' ? 'selected' : ''}>String</option>
+                                <option value="int32" ${dataType === 'int32' ? 'selected' : ''}>Integer</option>
+                                <option value="float" ${dataType === 'float' ? 'selected' : ''}>Float</option>
+                                <option value="bool" ${dataType === 'bool' ? 'selected' : ''}>Boolean</option>
+                                <option value="string[]" ${dataType === 'string[]' ? 'selected' : ''}>Array (String)</option>
+                            </select>
+                        </td>
+                        <td>
+                            <span class="ss-badge ${src.type}">${src.type === 'meta' ? 'Field' : 'Tax'}</span>
+                        </td>
+                    </tr>`;
+                    });
+                }
+
+                html += `</tbody></table>`;
+                container.html(html);
+
+            } catch (e) {
+                container.html(`<div style="color:red; padding:20px;">Error loading facets: ${e.message}</div>`);
+            }
+        },
+
+        showReindexNotice: function() {
+            const container = $('#ss-global-notice-container');
+            if (!container.length || container.find('.ss-reindex-banner').length) return;
+
+            const html = `
+                <div class="ss-reindex-banner" style="padding: 15px 20px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; color: #92400e; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05); animation: ssFadeIn 0.3s ease; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 20px;">⚠️</span>
+                        <div>
+                            <strong style="display: block; font-size: 14px;">Re-index Required</strong>
+                            <span style="font-size: 13px; opacity: 0.9;">You have modified searchable fields or facets. Please run a full re-index to update your search database.</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="jQuery('.ss-nav-item[data-step=\\'sync\\']').click();" class="ss-btn ss-btn-sm" style="background: #92400e; color: #fff; border: none; cursor: pointer; border-radius: 4px; padding: 6px 12px; font-weight: 600;">Go to Sync</button>
+                </div>
+                <style>
+                    @keyframes ssFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+                </style>
+            `;
+            container.html(html);
+        },
+
+        toggleApiKeyVisibility: function (e) {
+            const $btn = $(e.currentTarget);
+            const $input = $btn.siblings('input');
+            const $icon = $btn.find('.dashicons');
+
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $icon.removeClass('dashicons-visibility').addClass('dashicons-hidden');
+            } else {
+                $input.attr('type', 'password');
+                $icon.removeClass('dashicons-hidden').addClass('dashicons-visibility');
+            }
+        }
+    };
+
+    // Expose for Debugging
+    window.SwiftSearchAdmin = SwiftSearchAdmin;
+
+    $(document).ready(function () {
+        SwiftSearchAdmin.init();
+
+        // --- Custom Fields Event Binding (Delegation) ---
+        const $container = $('#ss-custom-fields-container');
+        if ($container.length) {
+            // Add
+            $container.on('click', '.ss-add-field-btn', function (e) {
+                e.preventDefault();
+                const pt = $(this).data('pt');
+                const $tbody = $container.find(`.ss-cf-body[data-pt="${pt}"]`);
+                const index = $tbody.children('tr').not('.ss-cf-empty').length + Date.now();
+
+                $tbody.find('.ss-cf-empty').remove();
+                $tbody.append(SwiftSearchAdmin.getCustomFieldRowHtml(pt, index));
+                SwiftSearchAdmin.showReindexNotice();
+            });
+
+            // Remove
+            $container.on('click', '.ss-remove-field-btn', function (e) {
+                e.preventDefault();
+                $(this).closest('tr').remove();
+                SwiftSearchAdmin.showReindexNotice();
+            });
+        }
+    });
+
+})(jQuery);

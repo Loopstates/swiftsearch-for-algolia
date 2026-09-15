@@ -1,0 +1,693 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* Version: 1.0.50 */
+:root {
+	--ss-primary: #ff0055;
+	/* Typesense Pink/Redish Brand Color or Custom */
+	--ss-primary-hover: #d60047;
+	--ss-bg: #f8fafc;
+	--ss-card-bg: #ffffff;
+	--ss-text: #0f172a;
+	--ss-text-muted: #64748b;
+	--ss-border: #e2e8f0;
+	--ss-radius: 12px;
+}
+
+.swift-search-dashboard {
+	font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	color: var(--ss-text);
+	background: var(--ss-bg);
+	min-height: 100vh;
+	margin-left: -20px;
+	/* Counteract WP Admin margin */
+	padding: 20px;
+}
+
+/* Header */
+.ss-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 30px;
+	padding: 0 10px;
+}
+
+.ss-logo h1 {
+	font-weight: 700;
+	font-size: 24px;
+	color: #111;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.ss-version {
+	font-size: 12px;
+	background: #e5e7eb;
+	padding: 2px 6px;
+	border-radius: 4px;
+	color: #4b5563;
+}
+
+.ss-link {
+	text-decoration: none;
+	color: var(--ss-text-muted);
+	font-weight: 500;
+	margin-left: 20px;
+}
+
+.ss-link:hover {
+	color: var(--ss-primary);
+}
+
+/* Container */
+.ss-container {
+	display: grid;
+	grid-template-columns: 260px 1fr;
+	gap: 30px;
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+/* Sidebar */
+.ss-sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.ss-nav {
+	background: var(--ss-card-bg);
+	border-radius: var(--ss-radius);
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ss-nav ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.ss-nav-item {
+	display: flex;
+	align-items: center;
+	padding: 15px 20px;
+	cursor: pointer;
+	border-left: 3px solid transparent;
+	transition: background 0.2s;
+}
+
+.ss-nav-item:hover {
+	background: #f9fafb;
+}
+
+.ss-nav-item.active {
+	background: #fdf2f6;
+	/* light pink tint */
+	border-left-color: var(--ss-primary);
+}
+
+.step-num {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	background: #e5e7eb;
+	border-radius: 50%;
+	font-size: 12px;
+	font-weight: 600;
+	color: #6b7280;
+	margin-right: 12px;
+}
+
+.ss-nav-item.active .step-num {
+	background: var(--ss-primary);
+	color: white;
+}
+
+.step-label {
+	font-weight: 500;
+}
+
+/* Status Card */
+.ss-status-card {
+	background: var(--ss-card-bg);
+	padding: 20px;
+	border-radius: var(--ss-radius);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ss-status-card h3 {
+	margin: 0 0 15px 0;
+	font-size: 14px;
+	text-transform: uppercase;
+	color: var(--ss-text-muted);
+	letter-spacing: 0.5px;
+}
+
+.status-row {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 10px;
+	font-size: 14px;
+}
+
+.status-row .value.disconnected {
+	color: #ef4444;
+	font-weight: 500;
+}
+
+.status-row .value.connected {
+	color: #10b981;
+	font-weight: 500;
+}
+
+/* Cards & Forms */
+.ss-card {
+	background: var(--ss-card-bg);
+	border-radius: var(--ss-radius);
+	border: 1px solid var(--ss-border);
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+	overflow: hidden;
+	margin-bottom: 30px;
+}
+
+.ss-card-header {
+	padding: 20px 30px;
+	border-bottom: 1px solid var(--ss-border);
+}
+
+.ss-card-header h2 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--ss-text);
+}
+
+.ss-card-header p {
+	margin: 5px 0 0 0;
+	color: var(--ss-text-muted);
+}
+
+.ss-card-body {
+	padding: 30px;
+}
+
+.ss-form-group {
+	margin-bottom: 20px;
+}
+
+.ss-form-group-row {
+	display: flex;
+	gap: 20px;
+}
+
+.ss-form-group-row .ss-form-group {
+	flex: 1;
+}
+
+.ss-form-group label {
+	display: block;
+	font-weight: 500;
+	margin-bottom: 8px;
+	color: #374151;
+}
+
+.ss-form-group input[type="text"],
+.ss-form-group input[type="password"],
+.ss-form-group input[type="number"],
+.ss-form-group select,
+.ss-form-group textarea {
+	width: 100%;
+	height: 42px;
+	padding: 10px 12px;
+	border: 1px solid var(--ss-border);
+	border-radius: 6px;
+	font-size: 14px;
+	box-sizing: border-box;
+	background-color: #f9fafb;
+	color: var(--ss-text);
+	transition: all 0.2s ease-in-out;
+}
+
+.ss-form-group textarea {
+	height: auto;
+	min-height: 100px;
+}
+
+.ss-form-group select {
+	padding-right: 32px;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 16px;
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	cursor: pointer;
+	line-height: 20px;
+}
+
+.ss-form-group input:not([type="checkbox"]):not([type="radio"]):focus,
+.ss-form-group select:focus,
+.ss-form-group textarea:focus {
+	border-color: var(--ss-primary);
+	background-color: #fff;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(255, 0, 85, 0.12);
+}
+
+/* API Key Toggle Visibility */
+.ss-input-wrapper {
+	position: relative;
+	width: 100%;
+}
+
+.ss-input-wrapper input {
+	padding-right: 40px !important;
+}
+
+.ss-input-toggle {
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	color: var(--ss-text-muted);
+	cursor: pointer;
+	padding: 5px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10;
+	transition: color 0.1s ease;
+}
+
+.ss-input-toggle:hover {
+	color: var(--ss-primary);
+}
+
+.ss-input-toggle .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.description {
+	color: var(--ss-text-muted);
+	font-style: italic;
+	font-size: 13px;
+	margin-top: 5px;
+}
+
+/* Button Actions - Consistent across all tabs */
+.ss-form-actions {
+	margin-top: 30px;
+	padding-top: 20px;
+	border-top: 1px solid var(--ss-border);
+	display: flex;
+	justify-content: flex-end;
+	gap: 15px;
+}
+
+/* Buttons */
+.ss-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 20px;
+	border-radius: 6px;
+	font-weight: 500;
+	cursor: pointer;
+	border: none;
+	font-size: 14px;
+	transition: background 0.2s;
+}
+
+.ss-btn-primary {
+	background: var(--ss-primary);
+	color: white;
+}
+
+.ss-btn-primary:hover {
+	background: var(--ss-primary-hover);
+}
+
+.ss-btn-danger {
+	background: #ef4444;
+	color: white;
+}
+
+.ss-btn-danger:hover {
+	background: #dc2626;
+}
+
+/* Option List & Grid Utilities */
+.ss-option-list {
+	display: grid;
+	gap: 15px;
+}
+
+.ss-card-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 15px;
+	margin-bottom: 25px;
+}
+
+@media (max-width: 1400px) {
+	.ss-card-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 900px) {
+	.ss-card-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Fix specificity issue with .ss-form-group label */
+/* Checkbox Cards - Global */
+.ss-checkbox-card,
+.swift-search-dashboard .ss-form-group .ss-checkbox-card,
+.swift-search-dashboard .ss-option-list .ss-checkbox-card {
+	display: flex;
+	align-items: center;
+	padding: 15px;
+	border: 1px solid var(--ss-border);
+	border-radius: 6px;
+	cursor: pointer;
+	background: #fff;
+	transition: all 0.2s;
+	width: 100%;
+	/* Ensure it takes full width of container */
+	box-sizing: border-box;
+	margin-bottom: 0;
+}
+
+.swift-search-dashboard .ss-checkbox-card input {
+	margin-right: 15px !important;
+	/* Force margin */
+	margin-top: 0 !important;
+	/* Fix alignment */
+}
+
+.swift-search-dashboard .ss-checkbox-card.checked {
+	border-color: var(--ss-primary);
+	background: #fff5f8;
+}
+
+.ss-checkbox-card:hover {
+	border-color: #d1d5db;
+}
+
+.ss-checkbox-card input {
+	margin-right: 15px;
+}
+
+.ss-checkbox-card .info {
+	display: flex;
+	flex-direction: column;
+}
+
+.ss-checkbox-card .title {
+	font-weight: 600;
+	color: #111;
+}
+
+.ss-checkbox-card .meta {
+	font-size: 13px;
+	color: var(--ss-text-muted);
+}
+
+/* Range Input Styling */
+input[type=range] {
+	-webkit-appearance: none;
+	appearance: none;
+	/* Hides the slider so that custom slider can be made */
+	width: 100%;
+	/* Specific width is required for Firefox. */
+	background: transparent;
+	/* Otherwise white in Chrome */
+}
+
+input[type=range]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	height: 20px;
+	width: 20px;
+	border-radius: 50%;
+	background: var(--ss-primary);
+	cursor: pointer;
+	margin-top: -8px;
+	/* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+	width: 100%;
+	height: 4px;
+	cursor: pointer;
+	background: #e5e7eb;
+	border-radius: 2px;
+}
+
+input[type=range]::-moz-range-track {
+	width: 100%;
+	height: 4px;
+	cursor: pointer;
+	background: #e5e7eb;
+	border-radius: 2px;
+}
+
+input[type=range]::-moz-range-thumb {
+	height: 20px;
+	width: 20px;
+	border-radius: 50%;
+	background: var(--ss-primary);
+	cursor: pointer;
+	border: none;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+input[type=range]:focus {
+	outline: none;
+}
+
+input[type=range]::-ms-track {
+	width: 100%;
+	cursor: pointer;
+	background: transparent;
+	border-color: transparent;
+	color: transparent;
+}
+
+/* Pinning UI */
+.ss-autocomplete-results {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: #fff;
+	border: 1px solid var(--ss-border);
+	border-radius: 0 0 6px 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	z-index: 100;
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.ss-autocomplete-results ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ss-autocomplete-item {
+	padding: 10px 15px;
+	border-bottom: 1px solid #f3f4f6;
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	transition: background 0.1s;
+}
+
+.ss-autocomplete-item:last-child {
+	border-bottom: none;
+}
+
+.ss-autocomplete-item:hover {
+	background: #f9fafb;
+}
+
+.ss-autocomplete-item .title {
+	font-weight: 500;
+	color: #111;
+}
+
+.ss-autocomplete-item .type.pill,
+.ss-pinned-card .type {
+	font-size: 10px;
+	text-transform: uppercase;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: #e5e7eb;
+	color: #4b5563;
+	font-weight: 600;
+}
+
+.ss-pinned-grid {
+	display: grid;
+	gap: 10px;
+}
+
+.ss-pinned-card {
+	display: flex;
+	align-items: center;
+	background: #fff;
+	border: 1px solid var(--ss-border);
+	padding: 10px 15px;
+	border-radius: 6px;
+	justify-content: space-between;
+}
+
+.ss-pinned-card .position {
+	font-weight: 700;
+	color: var(--ss-primary);
+	margin-right: 15px;
+	width: 30px;
+}
+
+.ss-pinned-card .details {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.ss-pinned-card .title {
+	font-weight: 600;
+	color: #111;
+}
+
+.remove-pin {
+	background: none;
+	border: none;
+	color: #9ca3af;
+	cursor: pointer;
+	font-size: 18px;
+	padding: 0 5px;
+}
+
+.remove-pin:hover {
+	color: #ef4444;
+}
+
+/* Sync Logs */
+.ss-log-viewer {
+	background: #1f2937;
+	color: #e5e7eb;
+	padding: 15px;
+	border-radius: 6px;
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	max-height: 300px;
+	overflow-y: auto;
+	white-space: normal;
+	border: 1px solid #374151;
+}
+
+.ss-log-placeholder {
+	color: #9ca3af;
+	text-align: center;
+	padding: 20px;
+	font-style: italic;
+}
+
+.ss-log-entry {
+	margin-bottom: 0;
+	border-bottom: 1px dashed #374151;
+	padding: 4px 0;
+	line-height: 1.4;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	/* Distinct columns */
+}
+
+.ss-log-entry:last-child {
+	border-bottom: none;
+}
+
+.ss-log-entry strong {
+	color: #ef4444;
+	display: inline;
+	margin-bottom: 0;
+	font-size: 11px;
+}
+
+.ss-log-entry .ids {
+	color: #9ca3af;
+	word-break: break-all;
+	font-size: 11px;
+	margin-top: 0;
+	display: inline;
+	margin-left: 5px;
+}
+
+/* Custom Checkbox Styling for Dashboard */
+.swift-search-dashboard input[type="checkbox"] {
+	-webkit-appearance: none !important;
+	appearance: none !important;
+	background-color: #fff !important;
+	margin: 0 !important;
+	font: inherit !important;
+	color: currentColor !important;
+	width: 18px !important;
+	height: 18px !important;
+	min-width: 18px !important;
+	border: 1px solid #d1d5db !important;
+	border-radius: 4px !important;
+	display: inline-grid !important;
+	place-content: center !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease-in-out !important;
+}
+
+.swift-search-dashboard input[type="checkbox"]::before {
+	content: "" !important;
+	width: 10px !important;
+	height: 10px !important;
+	transform: scale(0) !important;
+	transition: 120ms transform ease-in-out !important;
+	box-shadow: inset 1em 1em var(--ss-primary) !important;
+	transform-origin: center !important;
+	clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%) !important;
+}
+
+.swift-search-dashboard input[type="checkbox"]:checked {
+	border-color: var(--ss-primary) !important;
+	background-color: #fff !important;
+}
+
+.swift-search-dashboard input[type="checkbox"]:checked::before {
+	transform: scale(1) !important;
+}
+
+.swift-search-dashboard input[type="checkbox"]:focus {
+	outline: none !important;
+	border-color: var(--ss-primary) !important;
+	box-shadow: 0 0 0 3px rgba(255, 0, 85, 0.12) !important;
+}
+
+.swift-search-dashboard .ss-checkbox-card input[type="checkbox"] {
+	margin-right: 15px !important;
+}
