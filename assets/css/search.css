@@ -1,7 +1,7 @@
 /* Version: 1.1.1 */
 :root, .ss-algolia-wrapper {
-    --ss-primary: #0052cc;
-    --ss-primary-rgb: 0, 82, 204;
+    --ss-primary: #1e3a8a;
+    --ss-primary-rgb: 30, 58, 138;
     --ss-bg: #ffffff;
     --ss-card-bg: #ffffff;
     --ss-text-main: #1f2937;
@@ -198,9 +198,11 @@
 /* Bento Sections */
 .ss-section {
     padding: 24px;
-    border-bottom: 1px solid var(--ss-border);
+    border-bottom: none;
 }
-.ss-section:last-child { border-bottom: none; }
+.ss-section + .ss-section {
+    border-top: 1px solid var(--ss-border);
+}
 .ss-section-header {
     display: flex;
     align-items: center;
@@ -363,6 +365,12 @@
     overflow-y: visible;
 }
 
+.ss-layout-catalog .ss-section {
+    padding: 0 0 20px 0;
+    border-bottom: none !important;
+    border-top: none !important;
+}
+
 .ss-layout-catalog .ss-card {
     box-shadow: none;
     border-color: var(--ss-border);
@@ -471,7 +479,7 @@
 .ss-page-link:hover {
     border-color: var(--ss-primary);
     color: var(--ss-primary);
-    background: rgba(255, 0, 85, 0.05); /* Fallback */
+    background: rgba(30, 58, 138, 0.05); /* Fallback */
 }
 
 /* If dynamic RGB exists */
@@ -498,9 +506,8 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    padding: 12px 16px 4px;
-    margin-top: 8px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 8px 16px 4px;
+    margin-top: 4px;
 }
 
 .ss-algolia-attribution a {

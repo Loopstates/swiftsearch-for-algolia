@@ -22,7 +22,9 @@ class SearchController
     public function __construct()
     {
         add_shortcode('swift_search_algolia', array($this, 'render_shortcode'));
-        add_shortcode('swift_search', array($this, 'render_shortcode'));
+        if (!shortcode_exists('swift_search')) {
+            add_shortcode('swift_search', array($this, 'render_shortcode'));
+        }
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
         add_filter('get_search_form', array($this, 'override_search_form'));
     }
@@ -60,7 +62,10 @@ class SearchController
         $styling  = isset($settings['styling']) ? $settings['styling'] : array();
 
         if (!empty($styling)) {
-            $primary = !empty($styling['primary_color']) ? $styling['primary_color'] : '#0052cc';
+            $primary = !empty($styling['primary_color']) ? $styling['primary_color'] : '#1e3a8a';
+            if (in_array(strtolower($primary), array('#0052cc', '#ff0055', '#2563eb'), true)) {
+                $primary = '#1e3a8a';
+            }
             $text    = !empty($styling['text_color']) ? $styling['text_color'] : '#1f2937';
             $bg      = !empty($styling['card_bg']) ? $styling['card_bg'] : '#ffffff';
             $radius  = isset($styling['border_radius']) ? (int) $styling['border_radius'] : 16;

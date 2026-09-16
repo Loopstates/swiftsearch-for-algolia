@@ -123,7 +123,13 @@ class AdminController
             'indexed_users'        => isset($settings['indexed_users']) ? (bool) $settings['indexed_users'] : false,
             'custom_fields'        => isset($settings['custom_fields']) ? $settings['custom_fields'] : array(),
             'facets_config'        => isset($settings['facets_config']) ? $settings['facets_config'] : array(),
-            'styling'              => isset($settings['styling']) ? $settings['styling'] : array(),
+            'styling'              => (function() use ($settings) {
+                $s = isset($settings['styling']) ? $settings['styling'] : array();
+                if (!empty($s['primary_color']) && in_array(strtolower($s['primary_color']), array('#0052cc', '#ff0055', '#2563eb'), true)) {
+                    $s['primary_color'] = '#1e3a8a';
+                }
+                return $s;
+            })(),
             'available_post_types' => $this->get_public_post_types(),
             'available_taxonomies' => $this->get_public_taxonomies(),
             'available_indices'    => $this->get_active_indices(),

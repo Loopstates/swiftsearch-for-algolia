@@ -10,7 +10,7 @@
 * **Known Issues & Solutions**:
   * **Mobile Search Freeze**: Solved in base plugin version **1.6.3** and AI Search addon **1.0.1** by switching the JS selector bindings from absolute IDs to relative query selectors on `.ss-wrapper` classes (resolving duplicate ID elements output by responsive theme headers).
   * **Cloud Sync History**: Config/logs originally had 24-hour/7-day expirations (TTL) in Redis. This was disabled to store records permanently. The overview dashboard was updated with a dynamic fallback decoder to recover Walter's completed status, custom timeline logs, and counts.
-  * **Price Facet Bug**: Core `price` field in the schema is registered without `'facet' => true` by default, causing search errors when Price filters are enabled in the sidebar navigation (since schema compiler skips it as a duplicate core name). Next step is to fix this in the base plugin schema list.
+  * **Price Facet Bug**: Solved in base plugin updates by ensuring the core `price` field is registered with `'facet' => true` in the schema list, ensuring WooCommerce price filter compatibility.
 
 ---
 

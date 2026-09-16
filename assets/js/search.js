@@ -525,12 +525,12 @@
             const badge = document.createElement('div');
             badge.className = 'ss-algolia-attribution';
             badge.innerHTML = `
-                <a href="https://www.algolia.com/?utm_source=swiftsearch&utm_medium=referral" target="_blank" rel="noopener noreferrer" title="Search powered by Algolia">
-                    <span>Search by</span>
-                    <svg width="64" height="15" viewBox="0 0 168 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-left: 5px;">
-                        <path d="M78.6 30.6h-5.2V9.4h5.2v21.2zm-2.6-23.8c-1.8 0-3.2-1.4-3.2-3.2 0-1.8 1.4-3.2 3.2-3.2s3.2 1.4 3.2 3.2c0 1.8-1.4 3.2-3.2 3.2zm20.8 23.8h-5.2V2.4h5.2v28.2zm18.4-14.8c0-4.3-3.3-7.5-8-7.5-4.8 0-8.2 3.2-8.2 7.5s3.4 7.5 8.2 7.5c4.7 0 8-3.2 8-7.5zm-5.2 0c0 2-1.3 3.3-3 3.3s-3-1.3-3-3.3 1.3-3.3 3-3.3 3 1.3 3 3.3zm29.8 14.8h-5.2V9.4h5.2v21.2zm-2.6-23.8c-1.8 0-3.2-1.4-3.2-3.2 0-1.8 1.4-3.2 3.2-3.2s3.2 1.4 3.2 3.2c0 1.8-1.4 3.2-3.2 3.2zm23 23.8h-5v-2.2c-1.3 1.6-3.3 2.6-5.6 2.6-4.6 0-7.8-3.2-7.8-7.5s3.2-7.5 7.8-7.5c2.3 0 4.3 1 5.6 2.6V9.4h5v21.2zm-5.2-4.9c0-2-1.3-3.3-3-3.3s-3 1.3-3 3.3 1.3 3.3 3 3.3 3-1.3 3-3.3z" fill="#003DFF"/>
-                        <path d="M20 0C8.95 0 0 8.95 0 20s8.95 20 20 20 20-8.95 20-20S31.05 0 20 0zm0 36.25c-8.98 0-16.25-7.27-16.25-16.25S11.02 3.75 20 3.75 36.25 11.02 36.25 20 28.98 36.25 20 36.25zm1.25-27.5h-2.5v12.5l10 6 1.25-2.08-8.75-5.17V8.75z" fill="#003DFF"/>
+                <a href="https://www.algolia.com/?utm_source=swiftsearch-for-algolia&utm_medium=referral" target="_blank" rel="noopener noreferrer" title="SwiftSearch for Algolia" style="display: inline-flex; align-items: center; gap: 5px; text-decoration: none;">
+                    <span style="font-size: 11px; color: var(--ss-text-muted); font-weight: 500;">Search by</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="#003DFF" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">
+                        <path d="M12 0C5.445 0 .103 5.285.01 11.817c-.097 6.634 5.285 12.131 11.92 12.17a11.91 11.91 0 0 0 5.775-1.443.281.281 0 0 0 .052-.457l-1.122-.994a.79.79 0 0 0-.833-.14 9.693 9.693 0 0 1-3.923.77c-5.36-.067-9.692-4.527-9.607-9.888.084-5.293 4.417-9.573 9.73-9.573h9.73v17.296l-5.522-4.907a.407.407 0 0 0-.596.063 4.52 4.52 0 0 1-3.934 1.793 4.538 4.538 0 0 1-4.192-4.168 4.53 4.53 0 0 1 4.512-4.872 4.532 4.532 0 0 1 4.509 4.126c.018.205.11.397.265.533l1.438 1.275a.28.28 0 0 0 .462-.158 6.82 6.82 0 0 0 .099-1.725c-.232-3.376-2.966-6.092-6.345-6.3-3.873-.24-7.11 2.79-7.214 6.588-.1 3.7 2.933 6.892 6.634 6.974a6.75 6.75 0 0 0 4.136-1.294l7.212 6.394a.48.48 0 0 0 .797-.36V.456A.456.456 0 0 0 23.54 0Z"/>
                     </svg>
+                    <span style="font-size: 13px; font-weight: 700; color: #003DFF; letter-spacing: -0.2px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">algolia</span>
                 </a>
             `;
             container.appendChild(badge);

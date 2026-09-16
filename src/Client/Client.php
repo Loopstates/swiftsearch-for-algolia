@@ -223,20 +223,37 @@ class Client
             return array('num_documents' => 0, 'indices' => array());
         }
 
-        $count   = 0;
-        $details = array();
+        $base_index = $this->format_index_name('posts');
+        $count      = 0;
+        $details    = array();
+        $base_count = null;
+
         foreach ($indices as $item) {
-            $entries = (int) ($item['entries'] ?? 0);
-            $count  += $entries;
-            $details[$item['name']] = array(
+            $name       = $item['name'] ?? '';
+            $entries    = (int) ($item['entries'] ?? 0);
+            $is_replica = !empty($item['primary']);
+
+            $details[$name] = array(
                 'entries'    => $entries,
                 'data_size'  => $item['dataSize'] ?? 0,
                 'updated_at' => $item['updatedAt'] ?? '',
+                'is_replica' => $is_replica,
             );
+
+            if ($name === $base_index) {
+                $base_count = $entries;
+            }
+
+            // Only count non-replica primary indices
+            if (!$is_replica) {
+                $count += $entries;
+            }
         }
 
+        $final_count = ($base_count !== null) ? $base_count : $count;
+
         return array(
-            'num_documents' => $count,
+            'num_documents' => $final_count,
             'indices'       => $details,
         );
     }

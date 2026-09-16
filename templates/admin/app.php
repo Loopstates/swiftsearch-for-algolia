@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 ?>
-<div class="swift-search-dashboard" id="swift-search-app">
+<div class="swift-search-dashboard swift-search-algolia-dashboard" id="swift-search-app" data-engine="algolia">
     <header class="ss-header">
         <div class="ss-logo">
             <img src="<?php echo esc_url(SWIFT_SEARCH_ALGOLIA_URL . 'assets/images/swift-search-algolia.png'); ?>"
@@ -372,7 +372,7 @@ if (!defined('ABSPATH')) {
                         </div>
 
                         <div class="ss-code-preview" style="margin-top: 20px;">
-                            <code id="sc-preview">[swift_search]</code>
+                            <code id="sc-preview">[swift_search_algolia]</code>
                             <button type="button" class="ss-btn ss-btn-sm ss-btn-secondary" id="ss-copy-sc"><?php esc_html_e('Copy Shortcode', 'swiftsearch-for-algolia'); ?></button>
                         </div>
                     </div>
@@ -411,7 +411,7 @@ if (!defined('ABSPATH')) {
                          <div class="ss-form-group-row" style="gap: 20px;">
                             <div class="ss-form-group" style="flex:1;">
                                 <label for="ss-primary-color"><?php esc_html_e('Primary Accent Color', 'swiftsearch-for-algolia'); ?></label>
-                                <input type="color" id="ss-primary-color" class="ss-input-color" value="#0052cc">
+                                <input type="color" id="ss-primary-color" class="ss-input-color" value="#1e3a8a">
                                 <p class="description"><?php esc_html_e('Used for buttons, active facets, and highlights.', 'swiftsearch-for-algolia'); ?></p>
                             </div>
                             <div class="ss-form-group" style="flex:1;">
@@ -633,11 +633,11 @@ if (!defined('ABSPATH')) {
         style="text-align: center; margin-top: 40px; padding: 20px 20px 40px; color: #6b7280; font-size: 13px; border-top: 1px solid #f3f4f6;">
         <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
             <p style="margin: 0;">
-                A <a href="https://loopstates.com" target="_blank" style="color: inherit; text-decoration: none; font-weight: 600; color: #0052cc;">Loopstates</a> Product. SwiftSearch for Algolia v<?php echo esc_html(SWIFT_SEARCH_ALGOLIA_VERSION); ?>.
+                A <a href="https://loopstates.com" target="_blank" style="text-decoration: none; font-weight: 600; color: #632489;">Loopstates</a> Product. SwiftSearch for Algolia v<?php echo esc_html(SWIFT_SEARCH_ALGOLIA_VERSION); ?>.
             </p>
             <p style="margin: 0; color: #4b5563;">
                 <?php esc_html_e('For custom integrations, enterprise solutions, or dedicated engineering support, contact', 'swiftsearch-for-algolia'); ?> 
-                <a href="mailto:hello@loopstates.com" style="color: #0052cc; text-decoration: none; font-weight: 500;">hello@loopstates.com</a>
+                <a href="mailto:hello@loopstates.com" style="color: #632489; text-decoration: none; font-weight: 500;">hello@loopstates.com</a>
             </p>
             <div style="margin-top: 5px;">
                 <img src="<?php echo esc_url(SWIFT_SEARCH_ALGOLIA_URL . 'assets/images/loopstates.png'); ?>" 

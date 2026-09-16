@@ -271,7 +271,11 @@
 
             // Set Styling State
             if (swiftSearchConfig.styling) {
-                this.$ssPrimaryColor.val(swiftSearchConfig.styling.primary_color || '#ff0055');
+                let pColor = swiftSearchConfig.styling.primary_color || '#1e3a8a';
+                if (['#0052cc', '#ff0055', '#2563eb'].indexOf(pColor.toLowerCase()) !== -1) {
+                    pColor = '#1e3a8a';
+                }
+                this.$ssPrimaryColor.val(pColor);
                 this.$ssTextColor.val(swiftSearchConfig.styling.text_color || '#1f2937');
                 this.$ssCardBg.val(swiftSearchConfig.styling.card_bg || '#ffffff');
                 this.$ssBorderRadius.val(swiftSearchConfig.styling.border_radius || 16);
@@ -689,7 +693,7 @@
         },
 
         updateShortcodePreview: function () {
-            let sc = '[swift_search';
+            let sc = '[swift_search_algolia';
             const placeholder = this.$scPlaceholder.val() || 'Search...';
             const limit = this.$scLimit.val();
             

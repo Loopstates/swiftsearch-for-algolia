@@ -737,7 +737,7 @@ class RestController extends WP_REST_Controller
         // 3. Styling Section
         if ($section === 'styling') {
             $current_settings['styling'] = array(
-                'primary_color' => sanitize_text_field($params['primary_color'] ?? '#0052cc'),
+                'primary_color' => sanitize_text_field($params['primary_color'] ?? '#1e3a8a'),
                 'card_bg'       => sanitize_text_field($params['card_bg'] ?? '#ffffff'),
                 'text_color'    => sanitize_text_field($params['text_color'] ?? '#1f2937'),
                 'border_radius' => absint($params['border_radius'] ?? 16),
