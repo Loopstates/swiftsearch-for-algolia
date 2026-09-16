@@ -42,15 +42,8 @@ class DocumentBuilder
             return false;
         }
 
-        // 2. Safe Content Extraction & Truncation (Algolia Free Plan 10KB record limit safeguard)
-        $raw_content = wp_strip_all_tags(strip_shortcodes($post->post_content));
-        $max_length  = (int) apply_filters('swift_search_algolia_max_content_length', 6000, $id, $post);
-
-        if (mb_strlen($raw_content) > $max_length) {
-            $raw_content = mb_substr($raw_content, 0, $max_length);
-        }
-
-        $clean_content = apply_filters('swift_search_algolia_truncate_content', $raw_content, $id, $post);
+        // 2. Safe Content Extraction
+        $clean_content = wp_strip_all_tags(strip_shortcodes($post->post_content));
 
         $excerpt = $post->post_excerpt
             ? wp_strip_all_tags($post->post_excerpt)
