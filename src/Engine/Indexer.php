@@ -180,6 +180,7 @@ class Indexer
         $status                 = get_option('swift_search_algolia_index_status', array());
         $status['processed']    = $new_processed;
         $status['last_updated'] = time();
+        /* translators: 1: Processed document count, 2: Total document count */
         $status['message']      = sprintf(__('Indexed %1$d / %2$d', 'swiftsearch-for-algolia'), $new_processed, $status['total'] ?? $new_processed);
         update_option('swift_search_algolia_index_status', $status);
 
@@ -211,6 +212,7 @@ class Indexer
         $table = $wpdb->prefix . 'swift_search_algolia_batch_logs';
 
         $status     = empty($errors) ? 'success' : 'failed';
+        /* translators: %d: Number of batch errors */
         $error_msg  = empty($errors) ? null : sprintf(__('Batch completed with %d errors.', 'swiftsearch-for-algolia'), count($errors));
         $failed_ids = empty($errors) ? null : wp_json_encode($errors);
 

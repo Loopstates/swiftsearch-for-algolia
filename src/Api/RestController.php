@@ -206,6 +206,7 @@ class RestController extends WP_REST_Controller
         $error = $client->get_last_error();
         $msg   = __('Connection failed. Please check your Algolia credentials.', 'swiftsearch-for-algolia');
         if (!empty($error)) {
+            /* translators: %s: Error message details */
             $msg .= ' ' . sprintf(__('Details: %s', 'swiftsearch-for-algolia'), $error);
         }
 
@@ -459,6 +460,7 @@ class RestController extends WP_REST_Controller
         $cumulative_processed   = $offset + $processed;
         $status['processed']    = $cumulative_processed;
         $status['last_updated'] = time();
+        /* translators: 1: Content type name, 2: Current page number, 3: Total number of pages */
         $status['message']      = sprintf(__('Indexing %1$s (page %2$d of %3$d)...', 'swiftsearch-for-algolia'), $type, $page, $total_pages);
 
         if ($complete) {

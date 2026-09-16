@@ -29,7 +29,9 @@ delete_option('swift_search_algolia_schema_mismatch');
 delete_option('swift_search_algolia_debug_loopback');
 delete_option('swift_search_algolia_bg_secret');
 
-// 3. Clear Async Actions
+// 3. Clear Scheduled Crons & Async Actions
+wp_clear_scheduled_hook('swift_search_algolia_daily_cleanup');
+
 if (class_exists('ActionScheduler_QueueRunner')) {
     \ActionScheduler_QueueRunner::instance()->unhook_dispatch_async_request();
 }

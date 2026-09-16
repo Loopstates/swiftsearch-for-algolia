@@ -4,7 +4,7 @@
  * Plugin URI:  https://docs.loopstates.com/swiftsearch-for-algolia/
  * Description: Lightning-fast, intelligent search for WordPress & WooCommerce powered by Algolia. Features instant modal search, visual facets builder, field weighting, synonyms, visual merchandising & pinning, and local search analytics.
  * Version:           1.0.0
- * Tested up to:      6.7
+ * Tested up to:      7.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:      Loopstates
@@ -39,6 +39,9 @@ if (file_exists(untrailingslashit(SWIFT_SEARCH_ALGOLIA_PATH) . '/vendor/autoload
 
 // Activation Hook
 register_activation_hook(__FILE__, array(\SwiftSearchAlgolia\Core\DB::class, 'install'));
+
+// Deactivation Hook
+register_deactivation_hook(__FILE__, array(\SwiftSearchAlgolia\Core\Cron::class, 'deactivate'));
 
 // Init Plugin
 function swift_search_algolia_init()

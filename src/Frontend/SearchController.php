@@ -38,11 +38,11 @@ class SearchController
             'swift-search-algolia-frontend',
             SWIFT_SEARCH_ALGOLIA_URL . 'assets/css/search.css',
             array(),
-            file_exists(SWIFT_SEARCH_ALGOLIA_PATH . 'assets/css/search.css') ? filemtime(SWIFT_SEARCH_ALGOLIA_PATH . 'assets/css/search.css') : SWIFT_SEARCH_ALGOLIA_VERSION
+            SWIFT_SEARCH_ALGOLIA_VERSION
         );
 
         wp_register_script(
-            'algoliasearch-lite',
+            'swift-search-algolia-lite',
             SWIFT_SEARCH_ALGOLIA_URL . 'assets/vendor/algoliasearch-lite.js',
             array(),
             '4.24.0',
@@ -52,8 +52,8 @@ class SearchController
         wp_register_script(
             'swift-search-algolia-frontend',
             SWIFT_SEARCH_ALGOLIA_URL . 'assets/js/search.js',
-            array('algoliasearch-lite'),
-            file_exists(SWIFT_SEARCH_ALGOLIA_PATH . 'assets/js/search.js') ? filemtime(SWIFT_SEARCH_ALGOLIA_PATH . 'assets/js/search.js') : SWIFT_SEARCH_ALGOLIA_VERSION,
+            array('swift-search-algolia-lite'),
+            SWIFT_SEARCH_ALGOLIA_VERSION,
             true
         );
 
@@ -183,14 +183,14 @@ class SearchController
             'browse_mode'    => '',
         ), $atts);
 
-        $a = apply_filters('swift_search_shortcode_args', $a, $atts);
+        $a = apply_filters('swift_search_algolia_shortcode_args', $a, $atts);
 
         if (!empty($a['browse_mode'])) {
             $a['layout'] = ($a['browse_mode'] === 'true') ? 'catalog' : 'overlay';
         }
 
         wp_enqueue_style('swift-search-algolia-frontend');
-        wp_enqueue_script('algoliasearch-lite');
+        wp_enqueue_script('swift-search-algolia-lite');
         wp_enqueue_script('swift-search-algolia-frontend');
 
         $instance_id = function_exists('wp_unique_id') ? wp_unique_id('ss-algolia-') : ('ss-algolia-' . uniqid());
@@ -205,13 +205,13 @@ class SearchController
             data-instant="<?php echo esc_attr($a['instant_search']); ?>" data-scope="<?php echo esc_attr($a['scope']); ?>"
             data-post-types="<?php echo esc_attr($a['post_types']); ?>"
             data-layout="<?php echo esc_attr($a['layout']); ?>"
-            data-browse="<?php echo ($a['layout'] === 'catalog') ? 'true' : 'false'; ?>">
+            data-browse="<?php echo esc_attr(($a['layout'] === 'catalog') ? 'true' : 'false'); ?>">
             <div class="ss-search-box">
                 <input type="text" id="<?php echo esc_attr($instance_id . '-input'); ?>" class="ss-search-input" placeholder="<?php echo esc_attr($a['placeholder']); ?>"
                     autocomplete="off">
                 <span class="ss-loader" style="display:none;"></span>
             </div>
-            <div class="ss-results-container" <?php echo ($a['layout'] === 'catalog') ? '' : 'style="display:none;"'; ?>>
+            <div class="ss-results-container" style="<?php echo esc_attr(($a['layout'] === 'catalog') ? '' : 'display:none;'); ?>">
                 <div class="ss-facets"></div>
                 <div class="ss-hits"></div>
             </div>

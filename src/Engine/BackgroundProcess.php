@@ -94,6 +94,7 @@ class BackgroundProcess
          * Since this is internal, strict nonce check is good enough.
          */
         // Sanitize Nonce and Data
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Handled via server-generated HMAC verification below.
         $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
         $secret = get_option('swift_search_algolia_bg_secret');
         $expected = $secret ? hash_hmac('sha256', 'swift_search_algolia_async_bg', $secret) : '';
@@ -102,6 +103,7 @@ class BackgroundProcess
             wp_die('Invalid Nonce');
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified via hash_equals check above.
         $data = isset($_POST['data']) ? map_deep(wp_unslash($_POST['data']), 'sanitize_text_field') : array();
 
         // Route the request

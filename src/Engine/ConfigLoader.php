@@ -83,6 +83,6 @@ class ConfigLoader
             $defaults['typo_tolerance'] = $saved['typo_tolerance'];
         }
 
-        return apply_filters('swift_search_engine_config', $defaults);
+        return apply_filters('swift_search_algolia_engine_config', $defaults);
     }
 }

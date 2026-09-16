@@ -61,7 +61,7 @@ class AdminController
 
         // Chart.js for Local Analytics
         wp_enqueue_script(
-            'chart-js',
+            'swift-search-algolia-chart-js',
             SWIFT_SEARCH_ALGOLIA_URL . 'assets/vendor/chart.js',
             array(),
             '4.5.1',
@@ -80,7 +80,7 @@ class AdminController
         wp_enqueue_script(
             'swift-search-algolia-admin',
             SWIFT_SEARCH_ALGOLIA_URL . 'assets/js/admin.js',
-            array('jquery', 'chart-js'),
+            array('jquery', 'swift-search-algolia-chart-js'),
             SWIFT_SEARCH_ALGOLIA_VERSION . '.' . time(),
             true
         );

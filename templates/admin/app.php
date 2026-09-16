@@ -183,7 +183,7 @@ if (!defined('ABSPATH')) {
                 <div class="ss-card" style="margin-top: 20px;">
                     <div class="ss-card-header">
                         <h2><?php esc_html_e('Advanced Data & Custom Fields', 'swiftsearch-for-algolia'); ?></h2>
-                        <p><?php esc_html_e('Map custom meta fields to Algolia records (e.g. Price, SKU, Brand, ACF).', 'swiftsearch-for-algolia'); ?>
+                        <p><?php esc_html_e('Map custom meta fields to Algolia records (e.g. Price, SKU, Brand).', 'swiftsearch-for-algolia'); ?>
                         </p>
                     </div>
                     <div class="ss-card-body" id="ss-custom-fields-container">
@@ -569,7 +569,7 @@ if (!defined('ABSPATH')) {
                 <div class="ss-card" style="margin-top: 20px;">
                     <div class="ss-card-header">
                         <h2><?php esc_html_e('WP-CLI Terminal Commands', 'swiftsearch-for-algolia'); ?></h2>
-                        <p><?php esc_html_e('Recommended for large catalogs or hosting environments with strict timeouts (e.g. WP Engine, Kinsta).', 'swiftsearch-for-algolia'); ?></p>
+                        <p><?php esc_html_e('Recommended for large catalogs or hosting environments with strict execution timeouts.', 'swiftsearch-for-algolia'); ?></p>
                     </div>
                     <div class="ss-card-body">
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">

@@ -13,12 +13,24 @@ class Cron
      */
     public function init()
     {
-        add_action('swift_search_daily_cleanup', array($this, 'cleanup_logs'));
+        add_action('swift_search_algolia_daily_cleanup', array($this, 'cleanup_logs'));
 
         // Schedule if not already scheduled
-        if (!wp_next_scheduled('swift_search_daily_cleanup')) {
-            wp_schedule_event(time(), 'daily', 'swift_search_daily_cleanup');
+        if (!wp_next_scheduled('swift_search_algolia_daily_cleanup')) {
+            wp_schedule_event(time(), 'daily', 'swift_search_algolia_daily_cleanup');
         }
+    }
+
+    /**
+     * Clear scheduled events on deactivation.
+     */
+    public static function deactivate()
+    {
+        $timestamp = wp_next_scheduled('swift_search_algolia_daily_cleanup');
+        if ($timestamp) {
+            wp_unschedule_event($timestamp, 'swift_search_algolia_daily_cleanup');
+        }
+        wp_clear_scheduled_hook('swift_search_algolia_daily_cleanup');
     }
 
     /**

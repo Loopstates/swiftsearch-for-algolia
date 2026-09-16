@@ -174,7 +174,7 @@ class Client
             if (is_array($json) && isset($json['message'])) {
                 $msg .= ': ' . $json['message'];
             } elseif (!empty($response_body)) {
-                $msg .= ': ' . substr(strip_tags($response_body), 0, 200);
+                $msg .= ': ' . substr(wp_strip_all_tags($response_body), 0, 200);
             }
             $this->last_error = $msg;
             return false;

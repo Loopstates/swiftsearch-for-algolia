@@ -84,7 +84,7 @@ class BackgroundIndexer
     private function schedule_batch($offset)
     {
         if (function_exists('as_schedule_single_action')) {
-            as_schedule_single_action(time(), self::ACTION_HOOK, array('offset' => $offset), 'swift-search');
+            as_schedule_single_action(time(), self::ACTION_HOOK, array('offset' => $offset), 'swift-search-algolia');
         } else {
             wp_schedule_single_event(time(), self::ACTION_HOOK, array($offset));
         }
