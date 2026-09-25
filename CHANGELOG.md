@@ -5,6 +5,11 @@ All notable changes to the SwiftSearch for Algolia WordPress plugin will be docu
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-09-25
+
+### Fixed
+- **WordPress 6.7 Compatibility**: Deferred recurring cron event scheduling (`swift_search_algolia_daily_cleanup`) to the `init` action hook and plugin activation hook, preventing early translation loading notices (`_load_textdomain_just_in_time`) triggered by third-party `cron_schedules` filters (such as WooCommerce).
+
 ## [1.0.0] - 2026-09-15
 
 ### Initial Release

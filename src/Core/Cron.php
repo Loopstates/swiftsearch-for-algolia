@@ -15,7 +15,25 @@ class Cron
     {
         add_action('swift_search_algolia_daily_cleanup', array($this, 'cleanup_logs'));
 
-        // Schedule if not already scheduled
+        // Schedule on init so cron_schedules filters (e.g. from WooCommerce) do not trigger translation loading too early in WP 6.7+
+        add_action('init', array($this, 'schedule_events'));
+    }
+
+    /**
+     * Schedule events if not already scheduled.
+     */
+    public function schedule_events()
+    {
+        if (!wp_next_scheduled('swift_search_algolia_daily_cleanup')) {
+            wp_schedule_event(time(), 'daily', 'swift_search_algolia_daily_cleanup');
+        }
+    }
+
+    /**
+     * Schedule events on plugin activation.
+     */
+    public static function activate()
+    {
         if (!wp_next_scheduled('swift_search_algolia_daily_cleanup')) {
             wp_schedule_event(time(), 'daily', 'swift_search_algolia_daily_cleanup');
         }

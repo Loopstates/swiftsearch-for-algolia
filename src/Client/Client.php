@@ -143,7 +143,7 @@ class Client
                 'X-Algolia-Application-Id' => $this->app_id,
                 'X-Algolia-API-Key'        => $this->admin_api_key,
                 'Content-Type'             => 'application/json',
-                'User-Agent'               => 'SwiftSearch-for-Algolia/1.0.0; WordPress/' . get_bloginfo('version'),
+                'User-Agent'               => 'SwiftSearch-for-Algolia/' . (defined('SWIFT_SEARCH_ALGOLIA_VERSION') ? SWIFT_SEARCH_ALGOLIA_VERSION : '1.0.1') . '; WordPress/' . get_bloginfo('version'),
             ),
             'timeout' => 15,
         );

@@ -3,7 +3,7 @@ Contributors: loopstates
 Tags: algolia, woocommerce search, instant search, autocomplete, facets
 Requires at least: 5.8
 Tested up to: 7.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,9 @@ Our built-in analytics dashboard tracks your most searched terms, keyword volume
 8. **Sync Management**: Run bulk indexing processes and monitor real-time sync status logs.
 
 == Changelog ==
+
+= 1.0.1 =
+* Fix: Defer recurring cron event scheduling to the init action to prevent early translation loading notices in WordPress 6.7+.
 
 = 1.0.0 =
 * Initial release of SwiftSearch for Algolia.
