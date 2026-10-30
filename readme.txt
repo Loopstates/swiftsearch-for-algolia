@@ -2,7 +2,7 @@
 Contributors: loopstates
 Tags: algolia, woocommerce search, instant search, autocomplete, facets
 Requires at least: 5.8
-Tested up to: 7.1
+Tested up to: 7.1.4
 Stable tag: 1.0.2
 Requires PHP: 7.4
 License: GPLv2 or later
