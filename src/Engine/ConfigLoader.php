@@ -14,6 +14,51 @@ if (!defined('ABSPATH')) {
 class ConfigLoader
 {
     /**
+     * Centralized default post types.
+     * Core WordPress defaults to ['post', 'page']. Adds 'product' only if WooCommerce is active.
+     *
+     * @return array
+     */
+    public static function get_default_post_types()
+    {
+        $defaults = array('post', 'page');
+        if (class_exists('WooCommerce')) {
+            $defaults[] = 'product';
+        }
+        return apply_filters('swift_search_algolia_default_post_types', $defaults);
+    }
+
+    /**
+     * Centralized default taxonomies.
+     * Core WordPress defaults to ['category', 'post_tag']. Adds 'product_cat' only if WooCommerce is active.
+     *
+     * @return array
+     */
+    public static function get_default_taxonomies()
+    {
+        $defaults = array('category', 'post_tag');
+        if (class_exists('WooCommerce')) {
+            $defaults[] = 'product_cat';
+        }
+        return apply_filters('swift_search_algolia_default_taxonomies', $defaults);
+    }
+
+    /**
+     * Centralized default sort options.
+     * Core WordPress defaults to ['date_desc']. Adds 'price_asc' and 'price_desc' only if WooCommerce is active.
+     *
+     * @return array
+     */
+    public static function get_default_sort_options()
+    {
+        $defaults = array('date_desc');
+        if (class_exists('WooCommerce')) {
+            $defaults = array('price_asc', 'price_desc', 'date_desc');
+        }
+        return apply_filters('swift_search_algolia_default_sort_options', $defaults);
+    }
+
+    /**
      * Get the unified configuration.
      *
      * @return array
@@ -36,9 +81,9 @@ class ConfigLoader
             ),
             'enable_facets'       => true,
             'show_algolia_badge'  => true,
-            'indexed_post_types'  => array('product', 'post', 'page'),
-            'indexed_taxonomies'  => array('category', 'post_tag', 'product_cat'),
-            'sort_options'        => array('price_asc', 'price_desc', 'date_desc'),
+            'indexed_post_types'  => self::get_default_post_types(),
+            'indexed_taxonomies'  => self::get_default_taxonomies(),
+            'sort_options'        => self::get_default_sort_options(),
             'typo_tolerance'      => true,
         );
 

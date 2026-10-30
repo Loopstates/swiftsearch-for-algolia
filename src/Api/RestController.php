@@ -166,6 +166,9 @@ class RestController extends WP_REST_Controller
         }
 
         $existing_settings = get_option('swift_search_algolia_settings', array());
+        if (!is_array($existing_settings)) {
+            $existing_settings = array();
+        }
         $config = array_merge($existing_settings, array(
             'app_id'         => $app_id,
             'admin_api_key'  => $admin_api_key,
@@ -321,7 +324,7 @@ class RestController extends WP_REST_Controller
         $total_pages = 0;
 
         if ($type === 'terms') {
-            $taxonomies = isset($config['indexed_taxonomies']) ? $config['indexed_taxonomies'] : array('category', 'post_tag');
+            $taxonomies = isset($config['indexed_taxonomies']) ? $config['indexed_taxonomies'] : ConfigLoader::get_default_taxonomies();
 
             if (empty($taxonomies)) {
                 return new WP_REST_Response(array(
@@ -331,11 +334,12 @@ class RestController extends WP_REST_Controller
             }
 
             $args = array(
-                'taxonomy'   => $taxonomies,
-                'hide_empty' => false,
-                'number'     => $per_page,
-                'offset'     => $offset,
-                'fields'     => 'ids',
+                'taxonomy'         => $taxonomies,
+                'hide_empty'       => false,
+                'number'           => $per_page,
+                'offset'           => $offset,
+                'fields'           => 'ids',
+                'suppress_filters' => true,
             );
 
             $term_ids    = get_terms($args);
@@ -418,16 +422,17 @@ class RestController extends WP_REST_Controller
 
         } else {
             // Posts (Default)
-            $post_types = isset($config['indexed_post_types']) ? $config['indexed_post_types'] : array('post', 'page', 'product');
+            $post_types = isset($config['indexed_post_types']) ? $config['indexed_post_types'] : ConfigLoader::get_default_post_types();
 
             $args = array(
-                'post_type'      => $post_types,
-                'post_status'    => 'publish',
-                'posts_per_page' => $per_page,
-                'paged'          => $page,
-                'fields'         => 'ids',
-                'orderby'        => 'ID',
-                'order'          => 'ASC',
+                'post_type'        => $post_types,
+                'post_status'      => 'publish',
+                'posts_per_page'   => $per_page,
+                'paged'            => $page,
+                'fields'           => 'ids',
+                'orderby'          => 'ID',
+                'order'            => 'ASC',
+                'suppress_filters' => true,
             );
 
             $query = new \WP_Query($args);
@@ -852,10 +857,11 @@ class RestController extends WP_REST_Controller
         }
 
         $args = array(
-            'post_type'      => array('product', 'post', 'page'),
-            'post_status'    => 'publish',
-            's'              => $term,
-            'posts_per_page' => 10,
+            'post_type'        => ConfigLoader::get_default_post_types(),
+            'post_status'      => 'publish',
+            's'                => $term,
+            'posts_per_page'   => 10,
+            'suppress_filters' => true,
         );
 
         $query   = new \WP_Query($args);

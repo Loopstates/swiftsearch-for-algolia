@@ -41,7 +41,7 @@ class TermIndexer
 
         $allowed_taxonomies = isset($this->config['indexed_taxonomies'])
             ? $this->config['indexed_taxonomies']
-            : array('category', 'post_tag', 'product_cat');
+            : ConfigLoader::get_default_taxonomies();
 
         if (!in_array($term->taxonomy, $allowed_taxonomies)) {
             return false;
@@ -52,7 +52,7 @@ class TermIndexer
             $url = '';
         }
 
-        return array(
+        return apply_filters('swift_search_algolia_term_document', array(
             'objectID' => 'term_' . $term->term_id,
             'id'       => (string) $term->term_id,
             'term_id'  => (int) $term->term_id,
@@ -61,6 +61,6 @@ class TermIndexer
             'taxonomy' => $term->taxonomy,
             'count'    => (int) $term->count,
             'url'      => (string) $url,
-        );
+        ), $term);
     }
 }

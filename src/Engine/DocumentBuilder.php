@@ -36,7 +36,7 @@ class DocumentBuilder
 
         // 1. Strict Whitelist Check
         $settings      = get_option('swift_search_algolia_settings', array());
-        $allowed_types = isset($settings['indexed_post_types']) ? (array) $settings['indexed_post_types'] : array('product', 'post', 'page');
+        $allowed_types = isset($settings['indexed_post_types']) ? (array) $settings['indexed_post_types'] : ConfigLoader::get_default_post_types();
 
         if (!in_array($post->post_type, $allowed_types)) {
             return false;

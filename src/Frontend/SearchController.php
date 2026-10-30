@@ -3,6 +3,7 @@
 namespace SwiftSearchAlgolia\Frontend;
 
 use SwiftSearchAlgolia\Engine\Schema;
+use SwiftSearchAlgolia\Engine\ConfigLoader;
 use SwiftSearchAlgolia\Client\Client;
 
 if (!defined('ABSPATH')) {
@@ -113,7 +114,8 @@ class SearchController
                 'indexName'          => $base_index,
                 'replicas'           => $replicas,
                 'showAlgoliaBadge'   => isset($settings['show_algolia_badge']) ? (bool) $settings['show_algolia_badge'] : true,
-                'indexed_taxonomies' => isset($settings['indexed_taxonomies']) ? $settings['indexed_taxonomies'] : array(),
+                'indexed_post_types' => isset($settings['indexed_post_types']) ? $settings['indexed_post_types'] : ConfigLoader::get_default_post_types(),
+                'indexed_taxonomies' => isset($settings['indexed_taxonomies']) ? $settings['indexed_taxonomies'] : ConfigLoader::get_default_taxonomies(),
                 'indexed_users'      => isset($settings['indexed_users']) ? (bool) $settings['indexed_users'] : false,
                 'experience'         => isset($settings['experience']) ? $settings['experience'] : array(),
                 'facets_config'      => isset($settings['facets_config']) ? $settings['facets_config'] : array(),

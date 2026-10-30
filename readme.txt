@@ -3,7 +3,7 @@ Contributors: loopstates
 Tags: algolia, woocommerce search, instant search, autocomplete, facets
 Requires at least: 5.8
 Tested up to: 7.1
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,14 @@ Our built-in analytics dashboard tracks your most searched terms, keyword volume
 8. **Sync Management**: Run bulk indexing processes and monitor real-time sync status logs.
 
 == Changelog ==
+
+= 1.0.2 =
+* Enhancement: Declared full compatibility with WooCommerce High-Performance Order Storage (HPOS) and cart/checkout blocks.
+* Enhancement: Centralized default post types and taxonomies with WooCommerce detection and developer filter hooks.
+* Enhancement: Isolated administrative batch indexing queries (`suppress_filters => true`) across WP-CLI, background workers, and REST endpoints for full compatibility with multilingual plugins (Polylang, WPML).
+* Enhancement: Added `swift_search_algolia_term_document` filter hook for custom taxonomy term transformations.
+* Optimization: Made sorting replica indices WooCommerce-aware to conserve Algolia index quotas on standard content sites.
+* Fix: Ensured defensive option management during connection tests to preserve existing configuration.
 
 = 1.0.1 =
 * Fix: Defer recurring cron event scheduling to the init action to prevent early translation loading notices in WordPress 6.7+.

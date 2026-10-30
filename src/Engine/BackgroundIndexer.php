@@ -49,13 +49,14 @@ class BackgroundIndexer
         $indexer = new Indexer(); // Assuming Indexer handles single post logic
 
         $args = array(
-            'post_type' => 'any', // Or configured types
-            'post_status' => 'publish',
-            'posts_per_page' => self::BATCH_SIZE,
-            'offset' => $offset,
-            'fields' => 'ids',
-            'orderby' => 'ID',
-            'order' => 'ASC',
+            'post_type'        => 'any', // Or configured types
+            'post_status'      => 'publish',
+            'posts_per_page'   => self::BATCH_SIZE,
+            'offset'           => $offset,
+            'fields'           => 'ids',
+            'orderby'          => 'ID',
+            'order'            => 'ASC',
+            'suppress_filters' => true,
         );
 
         $query = new \WP_Query($args);

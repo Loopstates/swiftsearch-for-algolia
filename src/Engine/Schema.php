@@ -111,7 +111,7 @@ class Schema
         // 3. Dynamic Replicas for Sorting
         $sort_options = isset($config['sort_options']) && is_array($config['sort_options'])
             ? $config['sort_options']
-            : array('price_asc', 'price_desc', 'date_desc');
+            : ConfigLoader::get_default_sort_options();
 
         $replicas = array();
         foreach ($sort_options as $sort_key) {

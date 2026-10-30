@@ -78,13 +78,14 @@ class Indexer
         $this->create_collection();
 
         // 2. Calculate Totals
-        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : array('product', 'post', 'page');
+        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : ConfigLoader::get_default_post_types();
 
         $args = array(
-            'post_type'      => $post_types,
-            'post_status'    => 'publish',
-            'fields'         => 'ids',
-            'posts_per_page' => -1,
+            'post_type'        => $post_types,
+            'post_status'      => 'publish',
+            'fields'           => 'ids',
+            'posts_per_page'   => -1,
+            'suppress_filters' => true,
         );
 
         $query = new \WP_Query($args);
@@ -121,16 +122,17 @@ class Indexer
     public function process_bulk_batch($offset, $limit = 50)
     {
         $config     = $this->config_loader->get_config();
-        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : array('product', 'post', 'page');
+        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : ConfigLoader::get_default_post_types();
 
         $args = array(
-            'post_type'      => $post_types,
-            'post_status'    => 'publish',
-            'fields'         => 'ids',
-            'posts_per_page' => $limit,
-            'offset'         => $offset,
-            'orderby'        => 'ID',
-            'order'          => 'ASC',
+            'post_type'        => $post_types,
+            'post_status'      => 'publish',
+            'fields'           => 'ids',
+            'posts_per_page'   => $limit,
+            'offset'           => $offset,
+            'orderby'          => 'ID',
+            'order'            => 'ASC',
+            'suppress_filters' => true,
         );
 
         $query = new \WP_Query($args);
@@ -457,7 +459,7 @@ class Indexer
         $this->client->set_settings($base_index, $posts_settings, true);
 
         // 3. Configure replicas ranking
-        $sort_options = $config['sort_options'] ?? array('price_asc', 'price_desc', 'date_desc');
+        $sort_options = $config['sort_options'] ?? ConfigLoader::get_default_sort_options();
         foreach ($sort_options as $sort_key) {
             $replica_name     = Schema::get_replica_index_name($base_index, $sort_key);
             $replica_settings = Schema::get_replica_settings($sort_key);
@@ -485,7 +487,7 @@ class Indexer
         $this->client->clear_objects('users');
 
         $config       = $this->config_loader->get_config();
-        $sort_options = $config['sort_options'] ?? array('price_asc', 'price_desc', 'date_desc');
+        $sort_options = $config['sort_options'] ?? ConfigLoader::get_default_sort_options();
         foreach ($sort_options as $sort_key) {
             $replica_name = Schema::get_replica_index_name($base_index, $sort_key);
             $this->client->clear_objects($replica_name);

@@ -52,16 +52,17 @@ class IndexCommand
         $config_loader = new ConfigLoader();
         $config        = $config_loader->get_config();
 
-        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : array('product', 'post', 'page');
+        $post_types = isset($config['indexed_post_types']) ? (array) $config['indexed_post_types'] : ConfigLoader::get_default_post_types();
 
         WP_CLI::line('Querying post IDs to index...');
         WP_CLI::line('Selected Post Types: ' . implode(', ', $post_types));
 
         $query_args = array(
-            'post_type'      => $post_types,
-            'post_status'    => 'publish',
-            'fields'         => 'ids',
-            'posts_per_page' => -1,
+            'post_type'        => $post_types,
+            'post_status'      => 'publish',
+            'fields'           => 'ids',
+            'posts_per_page'   => -1,
+            'suppress_filters' => true,
         );
 
         $query    = new \WP_Query($query_args);

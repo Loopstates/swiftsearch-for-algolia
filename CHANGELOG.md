@@ -5,6 +5,20 @@ All notable changes to the SwiftSearch for Algolia WordPress plugin will be docu
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-10-30
+
+### Added
+- **WooCommerce HPOS Compatibility**: Declared official compatibility with WooCommerce High-Performance Order Storage (`custom_order_tables`) and Cart/Checkout Blocks (`cart_checkout_blocks`).
+- **Extensibility Hooks**: Added `swift_search_algolia_term_document`, `swift_search_algolia_default_post_types`, `swift_search_algolia_default_taxonomies`, and `swift_search_algolia_default_sort_options` filter hooks.
+
+### Enhanced
+- **Administrative Query Hygiene**: Applied `'suppress_filters' => true` to all bulk indexing queries in WP-CLI, Background Indexer, and REST API controllers to ensure smooth database queries alongside multilingual plugins (Polylang, WPML) and custom query interceptors.
+- **Centralized Safe Defaults**: Unified default post type, taxonomy, and replica sort definitions into `ConfigLoader` as a single source of truth with automatic WooCommerce detection.
+- **Algolia Replica Quota Optimization**: Avoided generating unnecessary price-sorting replica indices on standard content sites without WooCommerce.
+
+### Fixed
+- **Defensive Option Management**: Added defensive typing during connection testing to ensure settings are preserved safely without data loss.
+
 ## [1.0.1] - 2026-09-25
 
 ### Fixed
